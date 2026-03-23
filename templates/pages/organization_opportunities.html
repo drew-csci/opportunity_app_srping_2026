@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container organization-opportunities">
+    <div class="header">
+        <h1>📢 Posted Opportunities</h1>
+        <a href="#post" class="btn btn-primary">+ Post New Opportunity</a>
+    </div>
+
+    {% if opportunities %}
+    <div class="opportunities-list">
+        {% for opp in opportunities %}
+        <div class="opportunity-card">
+            <div class="opp-header">
+                <h3>{{ opp.title }}</h3>
+                <span class="badge">{{ opp.get_opportunity_type_display }}</span>
+            </div>
+            
+            <p class="description">{{ opp.description|truncatewords:30 }}</p>
+            
+            <div class="opp-meta">
+                <div class="meta-item">
+                    <span class="label">Location:</span>
+                    <span class="value">{{ opp.location }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="label">Duration:</span>
+                    <span class="value">{{ opp.get_duration_display }}</span>
+                </div>
+                {% if opp.hours_per_week %}
+                <div class="meta-item">
+                    <span class="label">Hours/Week:</span>
+                    <span class="value">{{ opp.hours_per_week }} hrs</span>
+                </div>
+                {% endif %}
+                <div class="meta-item">
+                    <span class="label">Applications:</span>
+                    <span class="value">{{ opp.applications.count }}</span>
+                </div>
+            </div>
+
+            <div class="opp-actions">
+                <a href="{% url 'applicant_profile' 1 %}" class="btn btn-sm btn-info">View Applications</a>
+                <button class="btn btn-sm btn-warning">Edit</button>
+                {% if opp.is_active %}
+                <button class="btn btn-sm btn-secondary">Deactivate</button>
+                {% else %}
+                <button class="btn btn-sm btn-success">Reactivate</button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>📭 You haven't posted any opportunities yet</p>
+        <a href="#post" class="btn btn-primary">Post Your First Opportunity</a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.organization-opportunities {
+    padding: 2rem;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.header h1 {
+    margin: 0;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.btn:hover {
+    background: #0056b3;
+}
+
+.btn-primary {
+    background: #007bff;
+}
+
+.btn-info {
+    background: #17a2b8;
+}
+
+.btn-warning {
+    background: #ffc107;
+    color: black;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.875rem;
+}
+
+.opportunities-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.opportunity-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.opportunity-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.opp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 1rem;
+}
+
+.opp-header h3 {
+    margin: 0;
+    flex: 1;
+}
+
+.badge {
+    background: #007bff;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.description {
+    margin: 0.5rem 0 1rem 0;
+    color: #666;
+    line-height: 1.5;
+}
+
+.opp-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.meta-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.meta-item .label {
+    font-weight: 600;
+    color: #666;
+    font-size: 0.8rem;
+}
+
+.meta-item .value {
+    color: #333;
+    margin-top: 0.25rem;
+}
+
+.opp-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.empty-state {
+    text-align: center;
+    background: white;
+    border-radius: 8px;
+    padding: 3rem 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.empty-state p {
+    margin: 0 0 1rem 0;
+    color: #999;
+    font-size: 1.1rem;
+}
+</style>
+{% endblock %}

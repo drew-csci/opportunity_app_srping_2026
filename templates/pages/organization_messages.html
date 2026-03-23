@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container organization-messages">
+    <div class="header">
+        <h1>💬 Messages</h1>
+        <p>Communicate with students about opportunities</p>
+    </div>
+
+    <div class="messages-container">
+        <div class="empty-state">
+            <p>📬 No messages yet</p>
+            <p>Messages from students will appear here</p>
+        </div>
+    </div>
+</div>
+
+<style>
+.organization-messages {
+    padding: 2rem;
+}
+
+.header {
+    margin-bottom: 2rem;
+}
+
+.header h1 {
+    margin: 0;
+}
+
+.messages-container {
+    background: white;
+    border-radius: 8px;
+    padding: 3rem 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.empty-state {
+    text-align: center;
+    color: #999;
+}
+
+.empty-state p {
+    margin: 0.5rem 0;
+    font-size: 1.1rem;
+}
+</style>
+{% endblock %}

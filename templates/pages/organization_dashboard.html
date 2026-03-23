@@ -1,0 +1,590 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Organization Dashboard - Opportunity App{% endblock %}
+
+{% block content %}
+<div class="org-dashboard">
+    <!-- Header Section -->
+    <div class="dashboard-header">
+        <div class="header-greeting">
+            <h1>Hello, {{ request.user.display_name }} 👋</h1>
+            <p class="subtitle">Here's your organization overview</p>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card stat-pending">
+            <div class="stat-icon-wrap">
+                <span class="stat-icon">📋</span>
+            </div>
+            <div class="stat-content">
+                <p class="stat-label">Review Volunteers</p>
+                <p class="stat-number">{{ pending_count }}</p>
+            </div>
+        </div>
+
+        <a href="{% url 'organization_profile' %}" class="stat-card stat-profile" style="text-decoration:none;color:inherit;">
+            <div class="stat-icon-wrap">
+                <span class="stat-icon">👤</span>
+            </div>
+            <div class="stat-content">
+                <p class="stat-label">Your Profile</p>
+                <p class="stat-number stat-link-text">View →</p>
+            </div>
+        </a>
+
+        <div class="stat-card stat-volunteers">
+            <div class="stat-icon-wrap">
+                <span class="stat-icon">👥</span>
+            </div>
+            <div class="stat-content">
+                <p class="stat-label">Current Volunteers</p>
+                <p class="stat-number">{{ total_volunteers }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <a href="{% url 'organization_opportunities' %}" class="action-btn action-primary" id="post-opportunity-btn">
+            <span class="action-icon">📝</span> Post Opportunity
+        </a>
+        <a href="{% url 'organization_messages' %}" class="action-btn action-secondary" id="messages-btn">
+            <span class="action-icon">💬</span> Share News Update
+        </a>
+    </div>
+
+    <!-- Recent Applications Section -->
+    <div class="recent-applications-section">
+        <div class="section-header">
+            <h2>Recent Applications</h2>
+            {% if recent_applications %}
+            <span class="apps-badge">{{ recent_applications|length }}</span>
+            {% endif %}
+        </div>
+
+        {% if recent_applications %}
+        <div class="applications-list">
+            {% for app in recent_applications %}
+            <div class="application-card status-{{ app.status }}" id="application-{{ app.id }}">
+                <div class="app-left">
+                    <div class="applicant-avatar">
+                        {{ app.student.display_name|first }}
+                    </div>
+                    <div class="applicant-info">
+                        <h3 class="applicant-name">{{ app.student.display_name }}</h3>
+                        <p class="opportunity-title">{{ app.opportunity.title }}</p>
+                        <p class="applied-time">Applied {{ app.applied_date|timesince }} ago</p>
+                    </div>
+                </div>
+                <div class="app-right">
+                    {% if app.status == 'pending' %}
+                    <div class="app-actions">
+                        <a href="{% url 'applicant_profile' app.student.id %}" class="action-btn-sm action-view" id="view-{{ app.id }}">
+                            View Profile
+                        </a>
+                        <button class="action-btn-sm action-accept accept-btn" data-app-id="{{ app.id }}" id="accept-{{ app.id }}">
+                            Accept
+                        </button>
+                        <button class="action-btn-sm action-decline decline-btn" data-app-id="{{ app.id }}" id="decline-{{ app.id }}">
+                            Decline
+                        </button>
+                    </div>
+                    {% else %}
+                    <div class="app-status-display">
+                        <span class="status-pill pill-{{ app.status }}">{{ app.get_status_display }}</span>
+                        <a href="{% url 'applicant_profile' app.student.id %}" class="action-btn-sm action-view" id="view-{{ app.id }}">
+                            View
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <p class="empty-title">No applications yet</p>
+            <p class="empty-subtitle">Once students apply to your opportunities, they'll appear here.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- JavaScript for Accept/Decline Actions -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.accept-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const appId = this.dataset.appId;
+            handleApplication(appId, 'accept');
+        });
+    });
+
+    document.querySelectorAll('.decline-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const appId = this.dataset.appId;
+            if (confirm('Are you sure you want to decline this application?')) {
+                handleApplication(appId, 'decline');
+            }
+        });
+    });
+});
+
+function handleApplication(appId, action) {
+    fetch(`/org/application/${appId}/${action}/`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const card = document.getElementById(`application-${appId}`);
+            const actionsDiv = card.querySelector('.app-right');
+
+            const statusClass = data.status === 'accepted' ? 'pill-accepted' : 'pill-declined';
+            const label = data.status === 'accepted' ? 'Accepted' : 'Declined';
+
+            actionsDiv.innerHTML = `
+                <div class="app-status-display">
+                    <span class="status-pill ${statusClass}">${label}</span>
+                </div>
+            `;
+
+            card.classList.remove('status-pending');
+            card.classList.add(`status-${data.status}`);
+            card.style.animation = 'fadeUpdate 0.4s ease';
+        }
+    })
+    .catch(err => {
+        alert('Something went wrong. Please try again.');
+        console.error(err);
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+
+<style>
+/* ── Org Dashboard ── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.org-dashboard {
+    padding: 2rem 1rem;
+    max-width: 960px;
+    margin: 0 auto;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Header */
+.dashboard-header {
+    margin-bottom: 2rem;
+}
+
+.header-greeting h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 0.35rem 0;
+}
+
+.dashboard-header .subtitle {
+    color: #64748b;
+    font-size: 1rem;
+    margin: 0;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+}
+
+.stat-icon-wrap {
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.stat-pending .stat-icon-wrap { background: #fef3c7; }
+.stat-profile .stat-icon-wrap { background: #dbeafe; }
+.stat-volunteers .stat-icon-wrap { background: #d1fae5; }
+
+.stat-label {
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.stat-number {
+    margin: 0.25rem 0 0 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.stat-link-text {
+    font-size: 1.1rem !important;
+    color: #2563eb !important;
+}
+
+/* Quick Actions */
+.quick-actions {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.action-primary {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+}
+
+.action-primary:hover {
+    background: linear-gradient(135deg, #1d4ed8, #1e40af);
+    box-shadow: 0 4px 14px rgba(37,99,235,0.4);
+    transform: translateY(-1px);
+}
+
+.action-secondary {
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+}
+
+.action-secondary:hover {
+    background: #e2e8f0;
+    transform: translateY(-1px);
+}
+
+.action-icon {
+    font-size: 1.1rem;
+}
+
+/* Recent Applications */
+.recent-applications-section {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 1.75rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.section-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.apps-badge {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: white;
+    padding: 0.2rem 0.7rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+/* Application Cards */
+.applications-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.application-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    transition: all 0.25s ease;
+}
+
+.application-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.application-card.status-accepted {
+    border-left: 4px solid #22c55e;
+}
+
+.application-card.status-declined {
+    border-left: 4px solid #ef4444;
+    opacity: 0.7;
+}
+
+.application-card.status-pending {
+    border-left: 4px solid #f59e0b;
+}
+
+.app-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.applicant-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.applicant-info {
+    min-width: 0;
+}
+
+.applicant-name {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.opportunity-title {
+    margin: 0.15rem 0 0;
+    font-size: 0.85rem;
+    color: #475569;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.applied-time {
+    margin: 0.15rem 0 0;
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+/* Actions */
+.app-right {
+    flex-shrink: 0;
+    margin-left: 1rem;
+}
+
+.app-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.app-status-display {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.action-btn-sm {
+    padding: 0.4rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.action-view {
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+}
+
+.action-view:hover {
+    background: #e2e8f0;
+}
+
+.action-accept {
+    background: #22c55e;
+    color: white;
+}
+
+.action-accept:hover {
+    background: #16a34a;
+    box-shadow: 0 2px 6px rgba(34,197,94,0.3);
+}
+
+.action-decline {
+    background: #fff;
+    color: #ef4444;
+    border: 1px solid #fecaca;
+}
+
+.action-decline:hover {
+    background: #fef2f2;
+    border-color: #ef4444;
+}
+
+/* Status Pills */
+.status-pill {
+    padding: 0.3rem 0.7rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.pill-accepted {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.pill-declined {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.pill-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1.5rem;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.empty-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #334155;
+    margin: 0 0 0.5rem 0;
+}
+
+.empty-subtitle {
+    color: #94a3b8;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* Animation */
+@keyframes fadeUpdate {
+    0%   { opacity: 0.5; transform: scale(0.98); }
+    100% { opacity: 1;   transform: scale(1); }
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .application-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .app-right {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .app-actions {
+        width: 100%;
+    }
+
+    .action-btn-sm {
+        flex: 1;
+        text-align: center;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .header-greeting h1 {
+        font-size: 1.4rem;
+    }
+}
+</style>
+{% endblock %}

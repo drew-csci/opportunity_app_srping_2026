@@ -14,9 +14,17 @@
       <nav>
         <ul class="nav">
           {% if user.is_authenticated %}
+            {% if user.user_type == 'organization' %}
+            <li><a href="{% url 'organization_dashboard' %}">Home</a></li>
+            <li><a href="{% url 'organization_dashboard' %}">Applicants</a></li>
+            <li><a href="{% url 'organization_profile' %}">Profile</a></li>
+            <li><a href="{% url 'organization_messages' %}">Messages</a></li>
+            <li><a href="{% url 'organization_profile' %}">Settings</a></li>
+            {% else %}
             <li><a href="{% url 'screen1' %}">Volunteer Opportunities</a></li>
             <li><a href="{% url 'screen2' %}">Organization</a></li>
             <li><a href="{% url 'screen3' %}">Contact Us</a></li>
+            {% endif %}
             <li class="divider"></li>
             <li class="muted">Hi, {{ user.display_name }}</li>
             <li><!-- <a href="{% url 'logout' %}">Log out</a> -->
