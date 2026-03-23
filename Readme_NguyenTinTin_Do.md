@@ -114,24 +114,18 @@ opportunity_app_srping_2026/
 The Django framework orchestrates the interaction between files:
 
 1. **Entry Point**: `manage.py` serves as the entry point, loading settings from `opportunity_app/settings.py` and executing commands.
-
 2. **URL Routing**: `opportunity_app/urls.py` defines the root URL patterns and includes URL configurations from `accounts/urls.py` and `pages/urls.py`.
-
 3. **Views and Logic**: View functions in `accounts/views.py` and `pages/views.py` handle HTTP requests, interact with models in `accounts/models.py` and `pages/models.py` to retrieve or store data in the database, and render appropriate templates.
-
 4. **Templates and Static Files**: Views pass data to HTML templates in the `templates/` directory, which extend `base.html` for consistent layout. Static files like CSS are linked from the `static/` directory.
-
 5. **Database Interaction**: Models define the database schema, and migrations in the `migrations/` folders ensure the database structure matches the model definitions.
-
 6. **Authentication**: The `accounts` app manages user authentication, with middleware in `opportunity_app/settings.py` ensuring authenticated access to protected views.
 
 ## How to Run the App
 
 1. **Prerequisites**: Ensure Python 3.8+ is installed on your system.
-
 2. **Clone or Download**: Obtain the project files.
-
 3. **Set up Virtual Environment**:
+
    ```bash
    python -m venv venv
    # On Windows:
@@ -139,29 +133,27 @@ The Django framework orchestrates the interaction between files:
    # On macOS/Linux:
    source venv/bin/activate
    ```
-
 4. **Install Dependencies**:
+
    ```bash
    pip install -r requirements.txt
    ```
-
 5. **Configure Environment**: Set up environment variables for database connection and Django settings (refer to `opportunity_app/settings.py` for required variables).
-
 6. **Run Migrations**:
+
    ```bash
    python manage.py migrate
    ```
-
 7. **Create Superuser** (optional):
+
    ```bash
    python manage.py createsuperuser
    ```
-
 8. **Run the Development Server**:
+
    ```bash
    python manage.py runserver
    ```
-
 9. **Access the Application**: Open a web browser and navigate to `http://127.0.0.1:8000/`.
 
 ## Summary
