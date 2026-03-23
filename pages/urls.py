@@ -9,4 +9,12 @@ urlpatterns = [
     path('achievements/', views.student_achievements, name='student_achievements'),
     path('faq/', views.faq, name='faq'),
     path('dashboard/', views.dashboard, name='dashboard'),
+    
+    # Messaging URLs
+    path('inbox/', views.organization_inbox, name='organization_inbox'),
+    path('message/<int:message_id>/', views.message_detail, name='message_detail'),
+    path('send-message/<int:recipient_id>/', views.send_message, name='send_message'),
+    path('message-sent-success/', views.message_sent_success, name='message_sent_success'),
+    path('message/<int:message_id>/mark-read/', views.mark_message_read, name='mark_message_read'),
+    path('api/unread-count/', views.get_unread_count, name='get_unread_count'),
 ]

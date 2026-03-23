@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="messaging-container">
+  <h1>Send Message to {{ recipient.display_name }}</h1>
+
+  <div class="send-message-form">
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {% for error in form.non_field_errors %}
+          <p>{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="post" class="message-form">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label for="{{ form.subject.id_for_label }}">Subject</label>
+        {{ form.subject }}
+        {% if form.subject.errors %}
+          <div class="form-error">
+            {% for error in form.subject.errors %}
+              <p>{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label for="{{ form.content.id_for_label }}">Message</label>
+        {{ form.content }}
+        {% if form.content.errors %}
+          <div class="form-error">
+            {% for error in form.content.errors %}
+              <p>{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Send Message</button>
+        <a href="javascript:history.back()" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  .messaging-container {
+    max-width: 700px;
+    margin: 30px auto;
+    padding: 20px;
+  }
+
+  .messaging-container h1 {
+    color: #0056b3;
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  .send-message-form {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 30px;
+  }
+
+  .alert {
+    padding: 12px 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+  }
+
+  .alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+  }
+
+  .alert p {
+    margin: 0;
+    font-size: 0.95em;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    display: block;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+    font-size: 0.95em;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    padding: 12px;
+    font-family: Arial, sans-serif;
+    font-size: 1em;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-sizing: border-box;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+  }
+
+  .form-group textarea {
+    resize: vertical;
+    min-height: 150px;
+  }
+
+  .form-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 10px 12px;
+    border-radius: 5px;
+    margin-top: 6px;
+    border: 1px solid #f5c6cb;
+    font-size: 0.9em;
+  }
+
+  .form-error p {
+    margin: 0;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 25px;
+    justify-content: center;
+  }
+
+  .btn {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: inline-block;
+  }
+
+  .btn-primary {
+    background-color: #007bff;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: #0056b3;
+    box-shadow: 0 2px 5px rgba(0, 123, 255, 0.3);
+  }
+
+  .btn-secondary {
+    background-color: #6c757d;
+    color: white;
+  }
+
+  .btn-secondary:hover {
+    background-color: #5a6268;
+  }
+</style>
+{% endblock %}

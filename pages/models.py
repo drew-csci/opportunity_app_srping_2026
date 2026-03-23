@@ -15,3 +15,50 @@ class Achievement(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Message(models.Model):
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='sent_messages',
+        limit_choices_to={'user_type': 'student'},
+    )
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='received_messages',
+        limit_choices_to={'user_type': 'organization'},
+    )
+    subject = models.CharField(max_length=200, blank=True)
+    content = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Message from {self.sender.display_name} to {self.recipient.display_name}"
+
+
+class MessageReply(models.Model):
+    message = models.ForeignKey(
+        Message,
+        on_delete=models.CASCADE,
+        related_name='replies'
+    )
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='sent_replies',
+    )
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Reply from {self.sender.display_name} on {self.created_at}"

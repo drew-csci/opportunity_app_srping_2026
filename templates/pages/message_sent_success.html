@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="success-container">
+  <div class="success-message">
+    <div class="success-icon">✓</div>
+    <h1>Message Sent!</h1>
+    <p>Your message has been successfully sent to the organization.</p>
+    <p class="text-muted">They will be able to see it in their inbox and can respond to your message.</p>
+    
+    <div class="action-links">
+      <a href="{% url 'screen1' %}" class="btn btn-primary">Back to Home</a>
+    </div>
+  </div>
+</div>
+
+<style>
+  .success-container {
+    max-width: 500px;
+    margin: 60px auto;
+    padding: 20px;
+  }
+
+  .success-message {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .success-icon {
+    font-size: 3em;
+    color: #28a745;
+    margin-bottom: 15px;
+  }
+
+  .success-message h1 {
+    color: #155724;
+    margin: 15px 0;
+    font-size: 2em;
+  }
+
+  .success-message p {
+    color: #155724;
+    font-size: 1.05em;
+    margin: 10px 0;
+    line-height: 1.5;
+  }
+
+  .text-muted {
+    color: #495057;
+    font-size: 0.95em;
+  }
+
+  .action-links {
+    margin-top: 30px;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary {
+    background-color: #007bff;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: #0056b3;
+    box-shadow: 0 2px 5px rgba(0, 123, 255, 0.3);
+  }
+</style>
+{% endblock %}
