@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Activity Feed – Volunteer App</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117; --surface: #181c27; --card: #1e2333;
+      --border: #2a2f42; --accent: #4f8ef7; --accent2: #a78bfa;
+      --text: #e8eaf0; --muted: #7b83a0; --radius: 16px;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 32px; background: var(--surface);
+      border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100;
+    }
+    .nav-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.3rem; color: var(--accent); }
+    .nav-links { display: flex; gap: 24px; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color 0.2s; }
+    .nav-links a.active { color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 2px; }
+    .nav-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.85rem;
+    }
+    .page { max-width: 720px; margin: 0 auto; padding: 40px 20px 80px; }
+    .page-header { margin-bottom: 32px; }
+    .page-header h1 { font-family: 'Syne', sans-serif; font-size: 1.9rem; font-weight: 800; letter-spacing: -0.5px; }
+    .page-header p { color: var(--muted); margin-top: 6px; font-size: 0.95rem; }
+    .filter-bar { display: flex; gap: 10px; margin-bottom: 28px; flex-wrap: wrap; }
+    .filter-btn {
+      padding: 7px 18px; border-radius: 999px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--muted); font-size: 0.85rem;
+      font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+    }
+    .filter-btn:hover { border-color: var(--accent); color: var(--text); }
+    .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    #feed-list { display: flex; flex-direction: column; gap: 16px; }
+    .activity-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 20px 22px; display: flex; gap: 16px; align-items: flex-start;
+      transition: transform 0.2s, border-color 0.2s; animation: fadeUp 0.4s ease both;
+    }
+    .activity-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    .card-avatar { width: 44px; height: 44px; min-width: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; color: #fff; }
+    .card-body { flex: 1; }
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
+    .card-name { font-weight: 600; font-size: 0.95rem; }
+    .card-time { font-size: 0.78rem; color: var(--muted); }
+    .card-org { font-size: 0.82rem; color: var(--accent); font-weight: 500; margin-top: 2px; }
+    .card-title { font-size: 0.95rem; margin-top: 8px; line-height: 1.5; }
+    .card-badge {
+      display: inline-block; margin-top: 10px; padding: 3px 12px; border-radius: 999px;
+      font-size: 0.75rem; font-weight: 600;
+      background: rgba(79,142,247,0.12); color: var(--accent); border: 1px solid rgba(79,142,247,0.25);
+    }
+    .empty-state {
+      text-align: center; padding: 80px 20px; color: var(--muted);
+      display: none; flex-direction: column; align-items: center; gap: 12px;
+    }
+    .empty-state h3 { font-family: 'Syne', sans-serif; font-size: 1.1rem; color: var(--text); }
+    .loading { display: flex; justify-content: center; padding: 60px 0; }
+    .spinner {
+      width: 36px; height: 36px; border: 3px solid var(--border);
+      border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .scroll-hint { text-align: center; color: var(--muted); font-size: 0.8rem; margin-top: 24px; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">VolunteerHub</div>
+  <div class="nav-links">
+    <a href="#">Dashboard</a>
+    <a href="#" class="active">Social Feed</a>
+    <a href="#">My Experiences</a>
+    <a href="#">Opportunities</a>
+  </div>
+  <div class="nav-avatar">YN</div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <h1>Peer Activity Feed</h1>
+    <p>See what other volunteers have been up to recently</p>
+  </div>
+
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="filterFeed('all', this)">All</button>
+    <button class="filter-btn" onclick="filterFeed('Education', this)">Education</button>
+    <button class="filter-btn" onclick="filterFeed('Environment', this)">Environment</button>
+    <button class="filter-btn" onclick="filterFeed('Health', this)">Health</button>
+    <button class="filter-btn" onclick="filterFeed('Community', this)">Community</button>
+  </div>
+
+  <div class="loading" id="loading"><div class="spinner"></div></div>
+  <div id="feed-list"></div>
+
+  <div class="empty-state" id="empty-state">
+    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
+    <h3>No recent activity available</h3>
+    <p>Check back later to see what your peers have been doing!</p>
+  </div>
+
+  <div class="scroll-hint" id="scroll-hint"></div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+  // ✅ Firebase config thật của bạn
+  const firebaseConfig = {
+    apiKey: "AIzaSyD2-FBDhRHxCCQRZFC8bF4f9myzFgmelFk",
+    authDomain: "volunteer-opportunity-app.firebaseapp.com",
+    projectId: "volunteer-opportunity-app",
+    storageBucket: "volunteer-opportunity-app.firebasestorage.app",
+    messagingSenderId: "328933132233",
+    appId: "1:328933132233:web:9b516b7d80c6fc3da60a18",
+    measurementId: "G-VDJ6MGFXZG"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const colors = ["#4f8ef7","#a78bfa","#34d399","#f472b6","#fb923c","#38bdf8"];
+  let allActivities = [];
+
+  // Tạo card
+  function createCard(activity, delay) {
+    const card = document.createElement('div');
+    card.className = 'activity-card';
+    card.style.animationDelay = `${delay * 80}ms`;
+    card.dataset.category = activity.category;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const initials = activity.name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+    card.innerHTML = `
+      <div class="card-avatar" style="background:${color}">${initials}</div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="card-name">${activity.name}</span>
+          <span class="card-time">${activity.time}</span>
+        </div>
+        <div class="card-org">📍 ${activity.organization}</div>
+        <div class="card-title">${activity.title}</div>
+        <span class="card-badge">${activity.category}</span>
+      </div>`;
+    return card;
+  }
+
+  // Render danh sách
+  function renderFeed(data) {
+    const list = document.getElementById('feed-list');
+    const empty = document.getElementById('empty-state');
+    const hint = document.getElementById('scroll-hint');
+    list.innerHTML = '';
+    if (data.length === 0) {
+      empty.style.display = 'flex';
+      hint.textContent = '';
+    } else {
+      empty.style.display = 'none';
+      data.forEach((a, i) => list.appendChild(createCard(a, i)));
+      hint.textContent = `Showing ${data.length} recent activit${data.length === 1 ? 'y' : 'ies'}`;
+    }
+  }
+
+  // Filter
+  window.filterFeed = function(category, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const filtered = category === 'all'
+      ? allActivities
+      : allActivities.filter(a => a.category === category);
+    renderFeed(filtered);
+  }
+
+  // Load từ Firebase
+  async function loadFeed() {
+    document.getElementById('loading').style.display = 'flex';
+    try {
+      const snapshot = await getDocs(collection(db, "activities"));
+      allActivities = [];
+      snapshot.forEach(doc => allActivities.push(doc.data()));
+      document.getElementById('loading').style.display = 'none';
+      renderFeed(allActivities);
+    } catch (error) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('scroll-hint').textContent = '⚠️ Lỗi kết nối Firebase. Kiểm tra lại Firestore Rules.';
+      console.error("Firebase error:", error);
+    }
+  }
+
+  loadFeed();
+</script>
+
+</body>
+</html>
