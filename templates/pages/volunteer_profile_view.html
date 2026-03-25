@@ -4,9 +4,7 @@
 
   {# Hero Banner #}
   <div class="profile-hero">
-    <div class="profile-avatar">
-      {{ request.user.first_name|slice:":1" }}{{ request.user.last_name|slice:":1" }}
-    </div>
+
     <div class="profile-hero__info">
       <p class="profile-hero__label">Volunteer Profile</p>
       <h1 class="profile-hero__name">{{ request.user.display_name }}</h1>
