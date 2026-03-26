@@ -1,2 +1,52 @@
-<h1>S1 Organization</h1>
-<p>This is a placeholder page.</p>
+<h1>Organization Dashboard</h1>
+<h2>Incoming Applications</h2>
+
+<table border="1" cellpadding="10" cellspacing="0" style="width: 100%; background: white;">
+    <tr>
+        <th>Student Name</th>
+        <th>Opportunity</th>
+        <th>Date</th>
+        <th>Status</th>
+        <th>Action</th>
+    </tr>
+
+    {% for app in applications %}
+    <tr>
+        <td>{{ app.student_name }}</td>
+        <td>{{ app.opportunity_title }}</td>
+        <td>{{ app.date_applied }}</td>
+
+        <td>
+            {% if app.status == "Accepted" %}
+                <span style="color: green; font-weight: bold;">Accepted</span>
+            {% elif app.status == "Declined" %}
+                <span style="color: red; font-weight: bold;">Declined</span>
+            {% else %}
+                <span style="color: gray;">Applied</span>
+            {% endif %}
+        </td>
+
+        <td>
+            <button>View Profile</button>
+
+            {% if app.status == "Applied" %}
+            
+            <form method="POST" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="index" value="{{ forloop.counter0 }}">
+                <input type="hidden" name="action" value="accept">
+                <button type="submit" style="background-color: green; color: white;">Accept</button>
+            </form>
+
+            <form method="POST" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="index" value="{{ forloop.counter0 }}">
+                <input type="hidden" name="action" value="decline">
+                <button type="submit" style="background-color: red; color: white;">Decline</button>
+            </form>
+
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
