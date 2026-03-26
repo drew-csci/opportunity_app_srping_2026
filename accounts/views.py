@@ -7,7 +7,12 @@ from .forms import UserRegistrationForm, EmailAuthenticationForm
 class RegisterView(FormView):
     template_name = 'accounts/register.html'
     form_class = UserRegistrationForm
-    success_url = reverse_lazy('screen1')
+
+    def get_success_url(self):
+        user = self.request.user
+        if hasattr(user, 'user_type') and user.user_type == 'student':
+            return reverse_lazy('dashboard')
+        return reverse_lazy('screen1')
 
     def form_valid(self, form):
         user = form.save()
@@ -27,6 +32,9 @@ class CustomLoginView(LoginView):
     redirect_authenticated_user = True
 
     def get_success_url(self):
+        user = self.request.user
+        if hasattr(user, 'user_type') and user.user_type == 'student':
+            return reverse_lazy('dashboard')
         return reverse_lazy('screen1')
 
     def get_context_data(self, **kwargs):

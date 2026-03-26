@@ -46,5 +46,6 @@ def student_achievements(request):
     })
 def faq(request):
     return render(request, 'pages/faq.html')
+@login_required
 def dashboard(request):
     return render(request, 'pages/dashboard.html')
