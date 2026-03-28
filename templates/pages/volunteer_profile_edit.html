@@ -17,12 +17,12 @@
       {% csrf_token %}
       <div class="profile-form-grid">
         <div class="form-field">
-          <label for="{{ form.first_name.id_for_label }}">First name</label>
+          <label for="{{ form.first_name.id_for_label }}">First Name</label>
           {{ form.first_name }}
           {% if form.first_name.errors %}<div class="error">{{ form.first_name.errors.0 }}</div>{% endif %}
         </div>
         <div class="form-field">
-          <label for="{{ form.last_name.id_for_label }}">Last name</label>
+          <label for="{{ form.last_name.id_for_label }}">Last Name</label>
           {{ form.last_name }}
           {% if form.last_name.errors %}<div class="error">{{ form.last_name.errors.0 }}</div>{% endif %}
         </div>
@@ -32,13 +32,13 @@
           {% if form.email.errors %}<div class="error">{{ form.email.errors.0 }}</div>{% endif %}
         </div>
         <div class="form-field">
-          <label for="{{ form.phone.id_for_label }}">Phone number</label>
+          <label for="{{ form.phone.id_for_label }}">Phone Number</label>
           {{ form.phone }}
           {% if form.phone.errors %}<div class="error">{{ form.phone.errors.0 }}</div>{% endif %}
         </div>
       </div>
       <div class="form-field">
-        <label for="{{ form.bio.id_for_label }}">Bio</label>
+        <label for="{{ form.bio.id_for_label }}">Biography</label>
         {{ form.bio }}
         {% if form.bio.errors %}<div class="error">{{ form.bio.errors.0 }}</div>{% endif %}
       </div>
