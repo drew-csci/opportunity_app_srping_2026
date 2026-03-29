@@ -10,7 +10,25 @@ def welcome(request):
 @login_required
 def screen1(request):
     role = request.user.user_type.title() if hasattr(request.user, 'user_type') else 'User'
-    return render(request, 'pages/screen1.html', {'role': role})
+
+    applications = [
+        {"student_name": "Alice Chen", "opportunity_title": "Food Bank", "date_applied": "Mar 10", "status": "Applied"},
+        {"student_name": "John Smith", "opportunity_title": "Tutoring", "date_applied": "Mar 11", "status": "Accepted"},
+        {"student_name": "Maria Lopez", "opportunity_title": "Park Clean", "date_applied": "Mar 12", "status": "Declined"},
+    ]
+
+    if request.method == "POST":
+        index = int(request.POST.get("index"))
+        action = request.POST.get("action")
+        if action == "accept":
+            applications[index]["status"] = "Accepted"
+        elif action == "decline":
+            applications[index]["status"] = "Declined"
+
+    return render(request, 'pages/screen1.html', {
+        'role': role,
+        'applications': applications
+    })
 
 @login_required
 def screen2(request):
