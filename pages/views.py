@@ -11,7 +11,6 @@ def welcome(request):
 def screen1(request):
     role = request.user.user_type.title() if hasattr(request.user, 'user_type') else 'User'
 
-    
     applications = [
         {"student_name": "Alice Chen", "opportunity_title": "Food Bank", "date_applied": "Mar 10", "status": "Applied"},
         {"student_name": "John Smith", "opportunity_title": "Tutoring", "date_applied": "Mar 11", "status": "Accepted"},
@@ -21,7 +20,6 @@ def screen1(request):
     if request.method == "POST":
         index = int(request.POST.get("index"))
         action = request.POST.get("action")
-
         if action == "accept":
             applications[index]["status"] = "Accepted"
         elif action == "decline":
