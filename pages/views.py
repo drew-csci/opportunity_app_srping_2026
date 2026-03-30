@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 
-from .models import Achievement
+from .models import Achievement, StudentOpportunity, Opportunity
 from .forms import AchievementForm
 
 def welcome(request):
@@ -44,7 +44,40 @@ def student_achievements(request):
         'achievements': achievements,
         'form': form,
     })
+
 def faq(request):
     return render(request, 'pages/faq.html')
+
 def dashboard(request):
     return render(request, 'pages/dashboard.html')
+
+
+@login_required
+def student_dashboard(request):
+    """
+    Student-specific dashboard displaying completed opportunities.
+    Only accessible to users with 'student' user type.
+    """
+    # Verify the user is a student
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
+        return redirect('screen1')
+
+    # Get all completed opportunities for the logged-in student
+    completed_opportunities = StudentOpportunity.objects.filter(
+        student=request.user,
+        status='completed'
+    ).select_related('opportunity', 'opportunity__organization')
+
+    # Optional: Get in-progress opportunities as well for context
+    in_progress_opportunities = StudentOpportunity.objects.filter(
+        student=request.user,
+        status='in_progress'
+    ).select_related('opportunity', 'opportunity__organization')
+
+    context = {
+        'completed_opportunities': completed_opportunities,
+        'in_progress_opportunities': in_progress_opportunities,
+        'completed_count': completed_opportunities.count(),
+    }
+
+    return render(request, 'pages/student_dashboard.html', context)
