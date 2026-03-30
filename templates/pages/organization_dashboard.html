@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row mb-4">
+    <div class="col-md-12">
+      <h1>Organization Dashboard</h1>
+      <p class="text-muted">Manage pending opportunity completions from your students.</p>
+    </div>
+  </div>
+
+  <!-- Pending Completions Section -->
+  <div class="row mb-5">
+    <div class="col-md-12">
+      <h2>Pending Completions
+        <span class="badge bg-warning">{{ pending_count }}</span>
+      </h2>
+      
+      {% if pending_completions %}
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Student</th>
+                <th>Opportunity</th>
+                <th>Submitted</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for student_opp in pending_completions %}
+                <tr>
+                  <td>
+                    <strong>{{ student_opp.student.display_name }}</strong><br>
+                    <small class="text-muted">{{ student_opp.student.email }}</small>
+                  </td>
+                  <td>
+                    <strong>{{ student_opp.opportunity.title }}</strong><br>
+                    <small class="text-muted">{{ student_opp.opportunity.description|truncatewords:10 }}</small>
+                  </td>
+                  <td>
+                    {{ student_opp.date_pending|date:"F d, Y g:i A" }}
+                  </td>
+                  <td>
+                    <a href="{% url 'approve_opportunity_completion' student_opp.id %}" class="btn btn-sm btn-success">
+                      <i class="bi bi-check-circle"></i> Approve
+                    </a>
+                    <a href="{% url 'deny_opportunity_completion' student_opp.id %}" class="btn btn-sm btn-danger">
+                      <i class="bi bi-x-circle"></i> Deny
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info" role="alert">
+          <strong>No pending completions.</strong> All submissions have been reviewed.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
