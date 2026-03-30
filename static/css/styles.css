@@ -23,3 +23,49 @@ fieldset.form-field { border:1px solid #e5e7eb; border-radius:.6rem; padding:.75
 .error { color:#b91c1c; font-size:.9rem; margin-top:.25rem; }
 .messages { list-style:none; padding:0; }
 .messages li { background:#ecfeff; border:1px solid #22d3ee; color:#0e7490; padding:.6rem .9rem; border-radius:.5rem; margin:.5rem 0; }
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.7);
+  padding: 1rem;
+  z-index: 50;
+}
+
+.modal.is-open {
+  display: flex;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 0.8rem;
+  max-width: 720px;
+  width: 100%;
+  padding: 1.5rem;
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  border: none;
+  background: transparent;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.application-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.item-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.8rem;
+  background: #fff;
+  padding: 1rem;
+}

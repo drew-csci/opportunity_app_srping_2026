@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="dash-card">
+    <h1>Application Details</h1>
+    <p class="muted">Opportunity: {{ application.opportunity.title }}</p>
+    <p class="muted">Status: {{ application.get_status_display }}</p>
+    <p class="muted">Applied on {{ application.applied_date|date:"F j, Y, P" }}</p>
+    {% if application.responded_date %}
+      <p class="muted">Responded on {{ application.responded_date|date:"F j, Y, P" }}</p>
+    {% endif %}
+
+    <h2>Application message</h2>
+    <p>{{ application.message|linebreaksbr }}</p>
+
+    <div class="button-row">
+      {% if application.status == 'draft' %}
+        <a href="{% url 'apply_to_opportunity' application.opportunity.id %}" class="btn btn-primary">Continue Draft</a>
+      {% endif %}
+      <a href="{% url 'opportunity_detail' application.opportunity.id %}" class="btn">Opportunity Info</a>
+      <a href="{% url 'my_applications' %}" class="btn">Back to My Applications</a>
+    </div>
+  </section>
+{% endblock %}

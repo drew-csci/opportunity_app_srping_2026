@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="dash-card">
+    <h1>Organization Applications</h1>
+
+    {% if applications %}
+      <div class="application-list">
+        {% for application in applications %}
+          <article class="item-card">
+            <h2>{{ application.opportunity.title }}</h2>
+            <p class="muted">Student: {{ application.student.display_name }} • {{ application.get_status_display }}</p>
+            <p>{{ application.message|truncatewords:30 }}</p>
+            <div class="button-row">
+              <a href="{% url 'review_application' application.id %}" class="btn btn-primary">Review</a>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>No applications available yet.</p>
+    {% endif %}
+  </section>
+{% endblock %}

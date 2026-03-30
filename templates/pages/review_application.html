@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="dash-card">
+    <h1>Review Application</h1>
+    <p class="muted">Opportunity: {{ application.opportunity.title }}</p>
+    <p class="muted">Student: {{ application.student.display_name }}</p>
+    <p class="muted">Status: {{ application.get_status_display }}</p>
+
+    <h2>Application message</h2>
+    <p>{{ application.message|linebreaksbr }}</p>
+
+    {% if application.status == 'pending' %}
+      <form method="post">
+        {% csrf_token %}
+        <div class="button-row">
+          <button type="submit" name="decision" value="accepted" class="btn btn-primary">Accept</button>
+          <button type="submit" name="decision" value="denied" class="btn">Deny</button>
+          <a href="{% url 'organization_applications' %}" class="btn">Back</a>
+        </div>
+      </form>
+    {% else %}
+      <p class="muted">This application has already been {{ application.get_status_display }}.</p>
+      <div class="button-row">
+        <a href="{% url 'organization_applications' %}" class="btn">Back to applications</a>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

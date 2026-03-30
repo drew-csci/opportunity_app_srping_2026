@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="dash-card">
+    <h1>Volunteer Opportunities</h1>
+
+    {% if opportunities %}
+      <div class="application-list">
+        {% for opportunity in opportunities %}
+          <article class="item-card">
+            <h2>{{ opportunity.title }}</h2>
+            <p>{{ opportunity.description|linebreaksbr }}</p>
+            <p class="muted">Posted {{ opportunity.posted_date|date:"F j, Y" }}</p>
+            <div class="button-row">
+              <a href="{% url 'opportunity_detail' opportunity.id %}" class="btn">View Opportunity</a>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>No current opportunities. Please check back later.</p>
+    {% endif %}
+  </section>
+{% endblock %}
