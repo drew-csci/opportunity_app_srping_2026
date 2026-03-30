@@ -1,3 +1,6 @@
 <h1>Student Dashboard</h1>
-<p>Welcome to your dashboard. From here you can manage your achievements.</p>
-<a href="{% url 'student_achievements' %}" class="btn btn-primary">My Achievements</a>
+<p>Welcome to your dashboard. From here you can manage your achievements and send feedback to organizations.</p>
+<div class="d-flex gap-2">
+    <a href="{% url 'student_achievements' %}" class="btn btn-primary">My Achievements</a>
+    <a href="{% url 'send_message' %}" class="btn btn-success">Send Feedback to Organization</a>
+</div>

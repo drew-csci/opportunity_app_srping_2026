@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Message Details{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mt-4 mb-4">
+        <a href="{% url 'organization_inbox' %}" class="btn btn-secondary">← Back to Inbox</a>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-light">
+            <div class="row">
+                <div class="col-md-8">
+                    <h3 class="card-title mb-0">{{ message.subject }}</h3>
+                    <small class="text-muted">From: <strong>{{ message.sender.display_name }}</strong></small>
+                </div>
+                <div class="col-md-4 text-end">
+                    <small class="text-muted">
+                        {{ message.created_at|date:"F d, Y" }} at {{ message.created_at|time:"H:i" }}
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <p class="card-text">{{ message.body|linebreaks }}</p>
+        </div>
+        <div class="card-footer bg-light">
+            <a href="{% url 'organization_inbox' %}" class="btn btn-secondary">Back to Inbox</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}My Inbox{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+        <h1>My Inbox</h1>
+        <span class="badge bg-primary">{{ message_count }} message{{ message_count|pluralize }}</span>
+    </div>
+
+    {% if messages %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-Light">
+                    <tr>
+                        <th>From</th>
+                        <th>Subject</th>
+                        <th>Date Received</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for message in messages %}
+                    <tr>
+                        <td>{{ message.sender.display_name }}</td>
+                        <td>
+                            <strong>{{ message.subject }}</strong>
+                            <div class="text-muted small" style="max-width: 400px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                {{ message.body|truncatewords:15 }}
+                            </div>
+                        </td>
+                        <td>{{ message.created_at|date:"M d, Y" }} <span class="text-muted small">{{ message.created_at|time:"H:i" }}</span></td>
+                        <td>
+                            <a href="{% url 'message_detail' message.pk %}" class="btn btn-sm btn-info">View</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            <h4 class="alert-heading">No messages yet</h4>
+            <p>You have not received any messages from students yet.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

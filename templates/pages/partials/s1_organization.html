@@ -1,2 +1,6 @@
-<h1>S1 Organization</h1>
-<p>This is a placeholder page.</p>
+<h1>Organization Dashboard</h1>
+<p>Welcome to your organization dashboard. From here you can review messages sent by students.</p>
+{% load static %}
+<a href="{% url 'organization_inbox' %}" class="btn btn-primary">
+    View Inbox
+</a>
