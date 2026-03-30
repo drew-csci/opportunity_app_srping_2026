@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Achievement, Opportunity, StudentOpportunity
+from .models import Achievement, Opportunity, StudentOpportunity, Notification
 
 # Register your models here.
 
@@ -36,16 +36,43 @@ class StudentOpportunityAdmin(admin.ModelAdmin):
     list_display = ('student', 'opportunity', 'status', 'date_joined', 'date_completed')
     list_filter = ('status', 'date_joined', 'date_completed')
     search_fields = ('student__email', 'opportunity__title')
-    readonly_fields = ('date_joined', 'id')
+    readonly_fields = ('date_joined', 'date_pending', 'id')
     fieldsets = (
         ('Student & Opportunity', {
             'fields': ('student', 'opportunity')
         }),
         ('Status', {
-            'fields': ('status', 'date_completed')
+            'fields': ('status', 'date_completed', 'date_pending')
+        }),
+        ('Denial Information', {
+            'fields': ('denial_reason',),
+            'classes': ('collapse',)
         }),
         ('Dates', {
             'fields': ('date_joined',),
+            'classes': ('collapse',)
+        }),
+    )
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ('recipient', 'notification_type', 'is_read', 'created_at')
+    list_filter = ('notification_type', 'is_read', 'created_at')
+    search_fields = ('recipient__email', 'message')
+    readonly_fields = ('created_at', 'id')
+    fieldsets = (
+        ('Recipient & Type', {
+            'fields': ('recipient', 'notification_type', 'is_read')
+        }),
+        ('Content', {
+            'fields': ('message',)
+        }),
+        ('Related Opportunity', {
+            'fields': ('student_opportunity',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at',),
             'classes': ('collapse',)
         }),
     )

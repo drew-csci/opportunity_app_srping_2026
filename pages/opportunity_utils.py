@@ -283,3 +283,156 @@ dashboard_data = get_student_dashboard_data(student)
 print(f"Completed: {dashboard_data['completed_count']}")
 print(f"In Progress: {dashboard_data['in_progress_count']}")
 """
+
+
+# ============================================================================
+# ORGANIZATION/APPROVAL FUNCTIONS
+# ============================================================================
+
+def get_pending_completions_for_organization(organization):
+    """
+    Get all pending opportunity completions for an organization.
+    These are pending submissions from students in the organization's posted opportunities.
+    
+    Args:
+        organization (User): The organization user (user_type must be 'organization')
+    
+    Returns:
+        QuerySet: StudentOpportunity objects with status='pending' for this organization's opportunities
+    """
+    if organization.user_type != 'organization':
+        raise ValueError("User must be an organization (user_type='organization')")
+    
+    return StudentOpportunity.objects.filter(
+        opportunity__organization=organization,
+        status='pending'
+    ).select_related('student', 'opportunity').order_by('-date_pending')
+
+
+def approve_opportunity_completion(student, opportunity):
+    """
+    Approve a pending opportunity completion, marking it as complete.
+    Also creates a notification for the student.
+    
+    Args:
+        student (User): The student user
+        opportunity (Opportunity): The opportunity instance
+    
+    Returns:
+        tuple: (StudentOpportunity instance, Notification instance)
+    
+    Raises:
+        ValueError: If opportunity is not currently pending
+    """
+    from .models import Notification
+    
+    student_opp = StudentOpportunity.objects.get(
+        student=student,
+        opportunity=opportunity
+    )
+    
+    if student_opp.status != 'pending':
+        raise ValueError(f"Opportunity must be 'pending' to approve, current status: {student_opp.status}")
+    
+    # Mark as completed
+    student_opp.status = 'completed'
+    student_opp.date_completed = timezone.now()
+    student_opp.save()
+    
+    # Create notification
+    notification = Notification.objects.create(
+        recipient=student,
+        notification_type=Notification.NotificationType.COMPLETION_APPROVED,
+        student_opportunity=student_opp,
+        message=f"Your completion of '{opportunity.title}' has been approved!"
+    )
+    
+    return student_opp, notification
+
+
+def deny_opportunity_completion(student, opportunity, denial_reason):
+    """
+    Deny a pending opportunity completion, reverting it to in_progress.
+    Also creates a notification for the student with the denial reason.
+    
+    Args:
+        student (User): The student user
+        opportunity (Opportunity): The opportunity instance
+        denial_reason (str): The reason for denial to send to the student
+    
+    Returns:
+        tuple: (StudentOpportunity instance, Notification instance)
+    
+    Raises:
+        ValueError: If opportunity is not currently pending
+    """
+    from .models import Notification
+    
+    student_opp = StudentOpportunity.objects.get(
+        student=student,
+        opportunity=opportunity
+    )
+    
+    if student_opp.status != 'pending':
+        raise ValueError(f"Opportunity must be 'pending' to deny, current status: {student_opp.status}")
+    
+    # Revert to in_progress
+    student_opp.status = 'in_progress'
+    student_opp.denial_reason = denial_reason
+    student_opp.date_pending = None
+    student_opp.save()
+    
+    # Create notification
+    notification = Notification.objects.create(
+        recipient=student,
+        notification_type=Notification.NotificationType.COMPLETION_DENIED,
+        student_opportunity=student_opp,
+        message=f"Your completion of '{opportunity.title}' was not approved.\n\nFeedback: {denial_reason}"
+    )
+    
+    return student_opp, notification
+
+
+def get_student_notifications(student):
+    """
+    Get all notifications for a student, ordered by most recent.
+    
+    Args:
+        student (User): The student user
+    
+    Returns:
+        QuerySet: Notification objects for the student
+    """
+    from .models import Notification
+    
+    return Notification.objects.filter(recipient=student).order_by('-created_at')
+
+
+def get_unread_notifications(student):
+    """
+    Get unread notifications for a student.
+    
+    Args:
+        student (User): The student user
+    
+    Returns:
+        QuerySet: Unread Notification objects
+    """
+    from .models import Notification
+    
+    return Notification.objects.filter(recipient=student, is_read=False).order_by('-created_at')
+
+
+def mark_notification_as_read(notification):
+    """
+    Mark a notification as read.
+    
+    Args:
+        notification (Notification): The notification instance
+    
+    Returns:
+        Notification: Updated notification instance
+    """
+    notification.is_read = True
+    notification.save()
+    return notification

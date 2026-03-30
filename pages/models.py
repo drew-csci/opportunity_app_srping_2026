@@ -75,6 +75,7 @@ class StudentOpportunity(models.Model):
     date_joined = models.DateTimeField(auto_now_add=True)
     date_pending = models.DateTimeField(null=True, blank=True)
     date_completed = models.DateTimeField(null=True, blank=True)
+    denial_reason = models.TextField(null=True, blank=True)
 
     class Meta:
         unique_together = ('student', 'opportunity')
@@ -82,3 +83,35 @@ class StudentOpportunity(models.Model):
 
     def __str__(self):
         return f"{self.student.email} - {self.opportunity.title} ({self.status})"
+
+
+class Notification(models.Model):
+    """Tracks notifications sent to users about opportunity status changes."""
+    
+    class NotificationType(models.TextChoices):
+        COMPLETION_DENIED = 'completion_denied', 'Completion Denied'
+        COMPLETION_APPROVED = 'completion_approved', 'Completion Approved'
+    
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='notifications',
+    )
+    notification_type = models.CharField(
+        max_length=30,
+        choices=NotificationType.choices,
+    )
+    student_opportunity = models.ForeignKey(
+        StudentOpportunity,
+        on_delete=models.CASCADE,
+        related_name='notifications',
+    )
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Notification to {self.recipient.email} - {self.notification_type}"

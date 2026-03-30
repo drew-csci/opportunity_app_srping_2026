@@ -34,3 +34,19 @@ class MarkOpportunityPendingForm(forms.ModelForm):
                 "Only opportunities that are 'In Progress' can be marked as pending."
             )
         return cleaned_data
+
+
+class DenyOpportunityForm(forms.Form):
+    """Form for organizations to deny a pending opportunity completion."""
+    
+    denial_reason = forms.CharField(
+        label='Reason for Denial',
+        widget=forms.Textarea(attrs={
+            'rows': 5,
+            'placeholder': 'Please provide feedback on why this opportunity completion was not approved...',
+            'class': 'form-control',
+        }),
+        required=True,
+        max_length=1000,
+        help_text='This feedback will be sent to the student.'
+    )

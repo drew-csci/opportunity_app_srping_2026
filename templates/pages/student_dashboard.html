@@ -4,8 +4,18 @@
 <div class="container mt-5">
   <div class="row mb-4">
     <div class="col-md-12">
-      <h1>My Student Dashboard</h1>
-      <p class="text-muted">Welcome, {{ request.user.display_name }}! Here are your completed opportunities.</p>
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h1>My Student Dashboard</h1>
+          <p class="text-muted">Welcome, {{ request.user.display_name }}! Here are your opportunities.</p>
+        </div>
+        <a href="{% url 'student_notifications' %}" class="btn btn-outline-secondary">
+          <i class="bi bi-bell"></i> Notifications
+          {% if pending_count %}
+            <span class="badge bg-warning">{{ pending_count }}</span>
+          {% endif %}
+        </a>
+      </div>
     </div>
   </div>
 
@@ -74,6 +84,38 @@
                   <a href="{% url 'mark_opportunity_pending' student_opp.id %}" class="btn btn-sm btn-success">
                     Mark Complete
                   </a>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Pending Opportunities Section -->
+  {% if pending_opportunities %}
+    <div class="row mb-5">
+      <div class="col-md-12">
+        <h2>Pending Approval
+          <span class="badge bg-info">{{ pending_count }}</span>
+        </h2>
+        
+        <div class="row">
+          {% for student_opp in pending_opportunities %}
+            <div class="col-md-6 col-lg-4 mb-3">
+              <div class="card h-100 border-info">
+                <div class="card-body">
+                  <h5 class="card-title text-info">{{ student_opp.opportunity.title }}</h5>
+                  <p class="card-text">{{ student_opp.opportunity.description|truncatewords:15 }}</p>
+                  <hr>
+                  <small class="text-muted">
+                    <strong>Organization:</strong> {{ student_opp.opportunity.organization.display_name }}<br>
+                    <strong>Submitted:</strong> {{ student_opp.date_pending|date:"F d, Y" }}
+                  </small>
+                </div>
+                <div class="card-footer bg-transparent">
+                  <span class="badge bg-info">Pending Review</span>
                 </div>
               </div>
             </div>
