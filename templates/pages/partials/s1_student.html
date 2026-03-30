@@ -1,3 +1,59 @@
-<h1>Student Dashboard</h1>
-<p>Welcome to your dashboard. From here you can manage your achievements.</p>
-<a href="{% url 'student_achievements' %}" class="btn btn-primary">My Achievements</a>
+<div class="search-section">
+
+  <!-- Keyword Search -->
+  <form class="search-form" method="get" action="{% url 'screen1' %}">
+    {% if filters.location %}<input type="hidden" name="location" value="{{ filters.location }}">{% endif %}
+    {% if filters.cause %}<input type="hidden" name="cause" value="{{ filters.cause }}">{% endif %}
+    {% if filters.duration %}<input type="hidden" name="duration" value="{{ filters.duration }}">{% endif %}
+    {% if filters.skills %}<input type="hidden" name="skills" value="{{ filters.skills }}">{% endif %}
+    {% if filters.type %}<input type="hidden" name="type" value="{{ filters.type }}">{% endif %}
+    <input type="text" name="q" value="{{ query }}" placeholder="Search by keyword, cause, location, or skill...">
+    <button type="submit" class="btn">Search</button>
+    {% if query or filters.location or filters.cause or filters.duration or filters.skills or filters.type %}
+      <a href="{% url 'screen1' %}" class="btn btn-clear">Clear</a>
+    {% endif %}
+  </form>
+
+  <!-- Filters -->
+  <form class="filter-form" method="get" action="{% url 'screen1' %}">
+    <input type="hidden" name="q" value="{{ query }}">
+    <input type="text" name="location" value="{{ filters.location }}" placeholder="Location">
+    <input type="text" name="cause" value="{{ filters.cause }}" placeholder="Cause">
+    <input type="text" name="duration" value="{{ filters.duration }}" placeholder="Duration">
+    <input type="text" name="skills" value="{{ filters.skills }}" placeholder="Skills">
+    <select name="type">
+      <option value="">All Types</option>
+      <option value="volunteer" {% if filters.type == 'volunteer' %}selected{% endif %}>Volunteer</option>
+      <option value="internship" {% if filters.type == 'internship' %}selected{% endif %}>Internship</option>
+    </select>
+    <button type="submit" class="btn">Apply Filters</button>
+  </form>
+
+</div>
+
+<!-- Results -->
+<div class="opportunity-results">
+  {% if opportunities %}
+    <p class="results-count muted">{{ opportunities|length }} result{{ opportunities|length|pluralize }} found</p>
+    {% for opp in opportunities %}
+      <div class="opportunity-card">
+        <div class="opp-header">
+          <h3>{{ opp.title }}</h3>
+          <span class="opp-badge opp-badge--{{ opp.opportunity_type }}">{{ opp.get_opportunity_type_display }}</span>
+        </div>
+        <div class="opp-meta">
+          <span><strong>Cause:</strong> {{ opp.cause }}</span>
+          <span><strong>Location:</strong> {{ opp.location }}</span>
+          <span><strong>Duration:</strong> {{ opp.duration }}</span>
+        </div>
+        {% if opp.skills_required %}
+          <p class="opp-skills"><strong>Skills:</strong> {{ opp.skills_required }}</p>
+        {% endif %}
+        <p class="opp-description">{{ opp.description }}</p>
+        <p class="muted opp-org">Posted by: {{ opp.organization.display_name }}</p>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p class="muted">No opportunities found{% if query or filters.location or filters.cause or filters.duration or filters.skills or filters.type %} matching your search{% endif %}. Check back soon!</p>
+  {% endif %}
+</div>
