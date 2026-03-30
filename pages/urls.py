@@ -9,4 +9,5 @@ urlpatterns = [
     path('achievements/', views.student_achievements, name='student_achievements'),
     path('faq/', views.faq, name='faq'),
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('application/<int:application_id>/remind/', views.send_application_reminder, name='send_reminder'),
 ]

@@ -28,13 +28,12 @@
     }
 
     .dashboard-container {
-      text-align: center;
       background: #fff;
       border-radius: 10px;
       padding: 40px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      width: 80%;
-      max-width: 900px;
+      width: 90%;
+      max-width: 1000px;
       margin: 40px auto;
     }
 
@@ -48,13 +47,14 @@
     .subtext {
       color: #666;
       font-size: 1.1em;
-      margin-bottom: 40px;
+      margin-bottom: 30px;
     }
 
     .button-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 20px;
+      margin-bottom: 40px;
       justify-items: center;
     }
 
@@ -101,6 +101,140 @@
     .profile-icon:hover {
       background-color: #dde2e6;
     }
+
+    /* Applications section */
+    .applications-section {
+      margin-top: 50px;
+      border-top: 2px solid #eee;
+      padding-top: 30px;
+    }
+
+    .applications-section h2 {
+      color: #222;
+      margin-bottom: 20px;
+    }
+
+    .application-list {
+      display: grid;
+      gap: 15px;
+    }
+
+    .application-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      background-color: #f9f9f9;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 20px;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+
+    .application-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .application-info h3 {
+      margin: 0 0 8px 0;
+      color: #0056b3;
+      font-size: 1.2em;
+    }
+
+    .application-info p {
+      margin: 5px 0;
+      color: #666;
+      font-size: 0.95em;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.85em;
+      font-weight: 500;
+      margin-top: 5px;
+    }
+
+    .status-applied {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+
+    .status-accepted {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .status-declined {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
+    .application-actions {
+      display: flex;
+      gap: 10px;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .remind-btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      background-color: #28a745;
+      color: white;
+      font-size: 0.9em;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
+
+    .remind-btn:hover {
+      background-color: #218838;
+      box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
+    }
+
+    .remind-btn:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #666;
+    }
+
+    .empty-state p {
+      font-size: 1.1em;
+    }
+
+    .alert {
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+
+    .alert-success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .alert-error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .alert-warning {
+      background-color: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeaa7;
+    }
   </style>
 </head>
 <body>
@@ -112,7 +246,7 @@
 
   <div class="dashboard-container">
     <div class="section-title">Welcome to your Dashboard</div>
-    <div class="subtext">Select an option below to get started.</div>
+    <div class="subtext">Manage your applications and opportunities below.</div>
 
     <div class="button-grid">
       <button class="dashboard-btn">📄 Your Applications</button>
@@ -121,7 +255,54 @@
       <button class="dashboard-btn">✍️ Post your Experience</button>
       <button class="dashboard-btn">🔍 Find new Opportunities</button>
     </div>
+
+    <!-- Applications Section -->
+    <div class="applications-section">
+      <h2>📋 Your Applications</h2>
+      
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}success{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      {% if applications %}
+        <div class="application-list">
+          {% for app in applications %}
+            <div class="application-card">
+              <div class="application-info">
+                <h3>{{ app.opportunity_title }}</h3>
+                <p><strong>Organization:</strong> {{ app.organization.display_name }}</p>
+                <p><strong>Applied:</strong> {{ app.applied_at|date:"M d, Y" }}</p>
+                <span class="status-badge status-{{ app.status }}">
+                  {{ app.get_status_display }}
+                </span>
+              </div>
+              <div class="application-actions">
+                {% if app.can_remind %}
+                  <form method="post" action="{% url 'send_reminder' app.id %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="remind-btn" title="Send a reminder to the organization about your application">
+                      📬 Remind About Me
+                    </button>
+                  </form>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <p>📭 You haven't submitted any applications yet.</p>
+          <p>Start exploring opportunities to submit your first application!</p>
+        </div>
+      {% endif %}
+    </div>
   </div>
+
+
 
 </body>
 </html>
