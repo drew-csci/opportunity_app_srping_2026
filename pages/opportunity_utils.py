@@ -90,6 +90,35 @@ def mark_opportunity_completed(student, opportunity):
     return student_opp
 
 
+def mark_opportunity_pending(student, opportunity):
+    """
+    Mark an in-progress opportunity as pending completion.
+    This is the first step before it's officially marked as completed.
+    
+    Args:
+        student (User): The student user
+        opportunity (Opportunity): The opportunity instance
+    
+    Returns:
+        StudentOpportunity: Updated StudentOpportunity instance
+    
+    Raises:
+        ValueError: If opportunity is not currently in_progress
+    """
+    student_opp = StudentOpportunity.objects.get(
+        student=student,
+        opportunity=opportunity
+    )
+    
+    if student_opp.status != 'in_progress':
+        raise ValueError(f"Opportunity must be 'in_progress' to mark as pending, current status: {student_opp.status}")
+    
+    student_opp.status = 'pending'
+    student_opp.date_pending = timezone.now()
+    student_opp.save()
+    return student_opp
+
+
 def get_student_completed_opportunities(student):
     """
     Get all completed opportunities for a student.
@@ -120,6 +149,23 @@ def get_student_in_progress_opportunities(student):
         student=student,
         status='in_progress'
     ).select_related('opportunity', 'opportunity__organization').order_by('-date_joined')
+
+
+def get_student_pending_opportunities(student):
+    """
+    Get all pending opportunities for a student.
+    These are opportunities marked for completion but awaiting approval.
+    
+    Args:
+        student (User): The student user
+    
+    Returns:
+        QuerySet: StudentOpportunity objects with status='pending'
+    """
+    return StudentOpportunity.objects.filter(
+        student=student,
+        status='pending'
+    ).select_related('opportunity', 'opportunity__organization').order_by('-date_pending')
 
 
 def get_student_not_started_opportunities(student):

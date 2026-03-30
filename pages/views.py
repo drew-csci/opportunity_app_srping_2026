@@ -1,8 +1,10 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from django.http import HttpResponseForbidden
 
 from .models import Achievement, StudentOpportunity, Opportunity
-from .forms import AchievementForm
+from .forms import AchievementForm, MarkOpportunityPendingForm
 
 def welcome(request):
     return render(request, 'pages/welcome.html')
@@ -81,3 +83,40 @@ def student_dashboard(request):
     }
 
     return render(request, 'pages/student_dashboard.html', context)
+
+
+@login_required
+def mark_opportunity_pending(request, student_opportunity_id):
+    """
+    Mark an in-progress opportunity as pending completion.
+    Only accessible to the student who is working on the opportunity.
+    """
+    # Verify the user is a student
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
+        return HttpResponseForbidden("Only students can access this action.")
+
+    # Get the student opportunity record
+    student_opportunity = get_object_or_404(StudentOpportunity, id=student_opportunity_id)
+
+    # Verify the student owns this record
+    if student_opportunity.student != request.user:
+        return HttpResponseForbidden("You can only mark your own opportunities as pending.")
+
+    # Verify the opportunity is currently in_progress
+    if student_opportunity.status != 'in_progress':
+        return redirect('student_dashboard')
+
+    if request.method == 'POST':
+        form = MarkOpportunityPendingForm(request.POST, instance=student_opportunity)
+        if form.is_valid():
+            student_opportunity.status = 'pending'
+            student_opportunity.date_pending = timezone.now()
+            student_opportunity.save()
+            return redirect('student_dashboard')
+    else:
+        form = MarkOpportunityPendingForm(instance=student_opportunity)
+
+    return render(request, 'pages/mark_opportunity_pending.html', {
+        'form': form,
+        'student_opportunity': student_opportunity,
+    })

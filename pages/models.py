@@ -53,6 +53,7 @@ class StudentOpportunity(models.Model):
     class CompletionStatus(models.TextChoices):
         NOT_STARTED = 'not_started', 'Not Started'
         IN_PROGRESS = 'in_progress', 'In Progress'
+        PENDING = 'pending', 'Pending Approval'
         COMPLETED = 'completed', 'Completed'
     
     student = models.ForeignKey(
@@ -72,6 +73,7 @@ class StudentOpportunity(models.Model):
         default=CompletionStatus.NOT_STARTED
     )
     date_joined = models.DateTimeField(auto_now_add=True)
+    date_pending = models.DateTimeField(null=True, blank=True)
     date_completed = models.DateTimeField(null=True, blank=True)
 
     class Meta:

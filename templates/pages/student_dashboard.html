@@ -69,8 +69,11 @@
                     <strong>Started:</strong> {{ student_opp.date_joined|date:"F d, Y" }}
                   </small>
                 </div>
-                <div class="card-footer bg-transparent">
+                <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
                   <span class="badge bg-warning">In Progress</span>
+                  <a href="{% url 'mark_opportunity_pending' student_opp.id %}" class="btn btn-sm btn-success">
+                    Mark Complete
+                  </a>
                 </div>
               </div>
             </div>
