@@ -12,11 +12,23 @@ ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', '127.0.0.1,localh
 INSTALLED_APPS = [
     'django.contrib.admin','django.contrib.auth','django.contrib.contenttypes',
     'django.contrib.sessions','django.contrib.messages','django.contrib.staticfiles',
+    'rest_framework',
+    'corsheaders',
     'accounts','pages',
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -50,6 +62,10 @@ DATABASES = {
         'HOST': os.getenv('DB_HOST','34.16.174.60'),
         'PORT': int(os.getenv('DB_PORT','5432')),
         'CONN_MAX_AGE': 60,
+        'TEST': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': '',  # Empty string = in-memory database
+        }
     }
 }
 
@@ -75,3 +91,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'screen1'
 LOGOUT_REDIRECT_URL = 'login'
+
+# CORS Settings
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+]
+
+CORS_ALLOW_CREDENTIALS = True

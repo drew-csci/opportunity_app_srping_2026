@@ -1,103 +1,202 @@
-import { useMemo, useState } from "react";
-import ConversationList from "./ConversationList";
-import ChatWindow from "./ChatWindow";
-
-const mockConversations = [
-  {
-    id: 1,
-    volunteer_name: "Tin Tin Do",
-    organization_name: "Red Cross",
-  },
-  {
-    id: 2,
-    volunteer_name: "Tin Tin Do",
-    organization_name: "Food Bank",
-  },
-];
-
-const mockMessagesByConversation = {
-  1: [
-    {
-      id: 101,
-      sender_type: "organization",
-      content: "Hi! Thanks for reaching out. How can we help?",
-    },
-  ],
-  2: [
-    {
-      id: 201,
-      sender_type: "organization",
-      content: "Welcome! Ask us anything about volunteering.",
-    },
-  ],
-};
-
-function getMockFaqResponse(text) {
-  const lowered = text.toLowerCase();
-  if (lowered.includes("hours")) {
-    return "Our volunteer hours are Monday-Friday, 9:00 AM to 5:00 PM.";
-  }
-  return "Thanks for your message. We will get back to you soon.";
-}
+import { useState, useEffect, useRef } from 'react';
+import ConversationList from './ConversationList';
+import ChatWindow from './ChatWindow';
+import MessageInput from './MessageInput';
+import FAQSuggestions from './FAQSuggestions';
 
 export default function Messaging() {
-  const [conversations] = useState(mockConversations);
-  const [activeId, setActiveId] = useState(mockConversations[0]?.id ?? null);
-  const [messagesByConversation, setMessagesByConversation] = useState(mockMessagesByConversation);
+  const [conversations, setConversations] = useState([]);
+  const [selectedConversation, setSelectedConversation] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [faqSuggestions, setFaqSuggestions] = useState([]);
+  const messageListEndRef = useRef(null);
 
-  const activeConversation = useMemo(
-    () => conversations.find((conversation) => conversation.id === activeId) ?? null,
-    [activeId, conversations]
-  );
+  // Fetch conversations on component mount
+  useEffect(() => {
+    fetchConversations();
+  }, []);
 
-  const activeMessages = activeConversation ? messagesByConversation[activeConversation.id] ?? [] : [];
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messageListEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-  function handleSendMessage(text) {
-    if (!activeConversation) return;
+  // Fetch messages when conversation changes
+  useEffect(() => {
+    if (selectedConversation) {
+      fetchMessages(selectedConversation.id);
+    }
+  }, [selectedConversation]);
 
-    const userMessage = {
-      id: Date.now(),
-      sender_type: "volunteer",
-      content: text,
-    };
+  const fetchConversations = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/conversations/', {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to fetch conversations');
+      const data = await response.json();
+      setConversations(data);
+      if (data.length > 0 && !selectedConversation) {
+        setSelectedConversation(data[0]);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    setMessagesByConversation((previous) => ({
-      ...previous,
-      [activeConversation.id]: [...(previous[activeConversation.id] ?? []), userMessage],
-    }));
+  const fetchMessages = async (conversationId) => {
+    try {
+      const response = await fetch(`/api/messages/?conversation_id=${conversationId}`, {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to fetch messages');
+      const data = await response.json();
+      setMessages(data);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
-    const faqResponse = {
-      id: Date.now() + 1,
-      sender_type: "organization",
-      content: getMockFaqResponse(text),
-    };
+  const handleSendMessage = async (content) => {
+    if (!selectedConversation) return;
 
-    setTimeout(() => {
-      setMessagesByConversation((previous) => ({
-        ...previous,
-        [activeConversation.id]: [...(previous[activeConversation.id] ?? []), faqResponse],
-      }));
-    }, 300);
+    try {
+      const response = await fetch('/api/messages/send/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCsrfToken(),
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          conversation_id: selectedConversation.id,
+          content: content,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to send message');
+      const newMessage = await response.json();
+      setMessages([...messages, newMessage]);
+
+      // Fetch FAQ suggestions after sending
+      fetchFaqSuggestions(content);
+
+      // Update conversation last message
+      fetchConversations();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const fetchFaqSuggestions = async (messageContent) => {
+    try {
+      const response = await fetch('/api/faq-suggestions/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCsrfToken(),
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          message_content: messageContent,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch FAQ suggestions');
+      const data = await response.json();
+      setFaqSuggestions(data);
+    } catch (err) {
+      console.error('Error fetching FAQ suggestions:', err);
+    }
+  };
+
+  const handleConversationSelect = (conversation) => {
+    setSelectedConversation(conversation);
+    setFaqSuggestions([]);
+  };
+
+  const handleCreateConversation = async (organizationId) => {
+    try {
+      const response = await fetch('/api/conversations/create/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCsrfToken(),
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          organization_id: organizationId,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to create conversation');
+      const newConversation = await response.json();
+      setConversations([newConversation, ...conversations]);
+      setSelectedConversation(newConversation);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const getCsrfToken = () => {
+    const name = 'csrftoken';
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === name + '=') {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  };
+
+  if (loading) {
+    return <div className="messaging-loading">Loading conversations...</div>;
+  }
+
+  if (error) {
+    return <div className="messaging-error">Error: {error}</div>;
   }
 
   return (
-    <div>
-      <h2>US-011 Messaging</h2>
-      <div style={{ display: "flex", gap: 12 }}>
-        <ConversationList conversations={conversations} activeId={activeId} onSelect={setActiveId} />
-        {activeConversation ? (
-          <ChatWindow
-            organization={activeConversation.organization_name}
-            messages={activeMessages}
-            onSendMessage={handleSendMessage}
-          />
+    <div className="messaging-container" style={{ display: 'flex', height: '100vh' }}>
+      <div className="messaging-sidebar" style={{ width: '25%', borderRight: '1px solid #ddd', overflowY: 'auto' }}>
+        <ConversationList
+          conversations={conversations}
+          selectedConversation={selectedConversation}
+          onConversationSelect={handleConversationSelect}
+          onCreateConversation={handleCreateConversation}
+        />
+      </div>
+
+      <div className="messaging-main" style={{ width: '75%', display: 'flex', flexDirection: 'column' }}>
+        {selectedConversation ? (
+          <>
+            <ChatWindow
+              conversation={selectedConversation}
+              messages={messages}
+              messageListEndRef={messageListEndRef}
+            />
+            <FAQSuggestions suggestions={faqSuggestions} />
+            <MessageInput onSendMessage={handleSendMessage} />
+          </>
         ) : (
-          <div style={{ flex: 1, border: "1px solid #ddd", borderRadius: 10, padding: 12 }}>
-            Select a conversation to start messaging.
+          <div className="messaging-empty" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <p>Select a conversation to start messaging</p>
           </div>
         )}
       </div>
     </div>
   );
 }
+
 

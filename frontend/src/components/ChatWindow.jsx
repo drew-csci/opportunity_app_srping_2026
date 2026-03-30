@@ -1,58 +1,63 @@
-import { useState } from "react";
+export default function ChatWindow({ conversation, messages, messageListEndRef }) {
+  const getOtherUserName = () => {
+    if (!conversation) return 'Unknown';
+    return conversation.other_user?.display_name || 'Unknown';
+  };
 
-export default function ChatWindow({ organization, messages, onSendMessage }) {
-  const [input, setInput] = useState("");
-
-  function handleSend() {
-    const text = input.trim();
-    if (!text) return;
-    onSendMessage(text);
-    setInput("");
-  }
+  const formatTime = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
   return (
-    <div style={{ flex: 1, border: "1px solid #ddd", borderRadius: 10, overflow: "hidden" }}>
-      <div style={{ padding: 10, borderBottom: "1px solid #eee", fontWeight: 700 }}>{organization}</div>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: '1px solid #ddd' }}>
+      <div style={{ padding: 15, borderBottom: '1px solid #eee', fontWeight: 700, backgroundColor: '#f9f9f9' }}>
+        {getOtherUserName()}
+      </div>
 
       <div
         aria-label="chat-messages"
         style={{
-          height: 280,
-          overflowY: "auto",
-          padding: 12,
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-          background: "#fff",
+          flex: 1,
+          overflowY: 'auto',
+          padding: 15,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
+          background: '#fff',
         }}
       >
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            style={{
-              alignSelf: message.sender_type === "volunteer" ? "flex-end" : "flex-start",
-              maxWidth: "80%",
-              background: message.sender_type === "volunteer" ? "#dce9ff" : "#f3f3f3",
-              borderRadius: 10,
-              padding: "8px 10px",
-            }}
-          >
-            <div>{message.content}</div>
+        {messages && messages.length > 0 ? (
+          messages.map((message) => (
+            <div
+              key={message.id}
+              style={{
+                alignSelf: message.sender.id === conversation?.volunteer?.id ? 'flex-end' : 'flex-start',
+                maxWidth: '70%',
+              }}
+            >
+              <div
+                style={{
+                  background: message.sender.id === conversation?.volunteer?.id ? '#007bff' : '#e9ecef',
+                  color: message.sender.id === conversation?.volunteer?.id ? 'white' : 'black',
+                  borderRadius: 10,
+                  padding: '10px 12px',
+                  wordWrap: 'break-word',
+                }}
+              >
+                {message.content}
+              </div>
+              <small style={{ display: 'block', marginTop: '4px', color: '#999', textAlign: message.sender.id === conversation?.volunteer?.id ? 'right' : 'left' }}>
+                {formatTime(message.timestamp)}
+              </small>
+            </div>
+          ))
+        ) : (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: '#999' }}>
+            No messages yet. Start the conversation!
           </div>
-        ))}
-      </div>
-
-      <div style={{ display: "flex", gap: 8, padding: 10, borderTop: "1px solid #eee" }}>
-        <input
-          aria-label="message-input"
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          placeholder="Type your message..."
-          style={{ flex: 1, padding: 8, borderRadius: 8, border: "1px solid #ccc" }}
-        />
-        <button type="button" onClick={handleSend}>
-          Send
-        </button>
+        )}
+        <div ref={messageListEndRef} />
       </div>
     </div>
   );
