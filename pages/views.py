@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.http import JsonResponse
 
 from .models import Achievement, Opportunity, Application
-from .forms import AchievementForm
+from .forms import AchievementForm, OpportunityForm
 from accounts.models import User
 
 
@@ -203,3 +204,30 @@ def organization_opportunities(request):
     }
 
     return render(request, 'pages/organization_opportunities.html', context)
+
+
+@login_required
+def organization_post_opportunity(request):
+    """Create a new opportunity for the logged-in organization."""
+    if request.user.user_type != 'organization':
+        return redirect('screen1')
+
+    if request.method == 'POST':
+        form = OpportunityForm(request.POST)
+        if form.is_valid():
+            opportunity = form.save(commit=False)
+            opportunity.organization = request.user
+            opportunity.save()
+            messages.success(
+                request,
+                f'"{opportunity.title}" has been posted successfully.'
+            )
+            return redirect('organization_opportunities')
+
+        messages.error(request, 'Please correct the highlighted fields and try again.')
+    else:
+        form = OpportunityForm()
+
+    return render(request, 'pages/organization_post_opportunity.html', {
+        'form': form,
+    })

@@ -18,4 +18,5 @@ urlpatterns = [
     path('org/profile/', views.organization_profile, name='organization_profile'),
     path('org/messages/', views.organization_messages, name='organization_messages'),
     path('org/opportunities/', views.organization_opportunities, name='organization_opportunities'),
+    path('org/opportunities/new/', views.organization_post_opportunity, name='organization_post_opportunity'),
 ]

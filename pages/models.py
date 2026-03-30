@@ -40,10 +40,12 @@ class Opportunity(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     category = models.CharField(max_length=50)
+    required_skills = models.TextField(blank=True, default='')
     opportunity_type = models.CharField(max_length=20, choices=OPPORTUNITY_TYPES, default='volunteer')
     location = models.CharField(max_length=200)
     duration = models.CharField(max_length=20, choices=DURATION_CHOICES, default='one-time')
     hours_per_week = models.IntegerField(null=True, blank=True)
+    application_deadline = models.DateField(null=True, blank=True)
     posted_date = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
     
