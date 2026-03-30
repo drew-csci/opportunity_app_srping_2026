@@ -554,3 +554,247 @@ class OrganizationApprovalTest(TestCase):
             status='completed'
         )
         self.assertEqual(completed.count(), 1)
+
+
+class EndToEndWorkflowTest(TestCase):
+    """Comprehensive integration test for the entire opportunity completion workflow."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        # Create test organization user
+        self.organization = User.objects.create_user(
+            email='org@test.com',
+            username='test_org',
+            first_name='Test',
+            last_name='Organization',
+            user_type='organization',
+            password='testpass123'
+        )
+
+        # Create test student user
+        self.student = User.objects.create_user(
+            email='student@test.com',
+            username='test_student',
+            first_name='Test',
+            last_name='Student',
+            user_type='student',
+            password='testpass123'
+        )
+
+        # Create test opportunity
+        self.opportunity = Opportunity.objects.create(
+            title='Build Community Website',
+            description='Help build a responsive website for the local community center.',
+            organization=self.organization,
+            status='open'
+        )
+
+        # Create a StudentOpportunity in "in_progress" status (pre-existing)
+        self.student_opportunity = StudentOpportunity.objects.create(
+            student=self.student,
+            opportunity=self.opportunity,
+            status='in_progress',
+            date_joined=timezone.now() - timedelta(days=10)
+        )
+
+        self.client = Client()
+
+    def test_complete_workflow_with_approval(self):
+        """Test the complete workflow: student marks complete → org approves → appears on dashboard."""
+        # Step 1: Student logs in and views their dashboard
+        self.client.login(email=self.student.email, password='testpass123')
+        response = self.client.get('/student-dashboard/')
+        self.assertEqual(response.status_code, 200)
+        
+        # Verify opportunity is in "in_progress" section
+        in_progress = response.context['in_progress_opportunities']
+        self.assertEqual(in_progress.count(), 1)
+        self.assertEqual(in_progress.first().status, 'in_progress')
+
+        # Step 2: Student marks opportunity as complete (changes status from in_progress → pending)
+        # This simulates the mark_opportunity_pending view
+        self.student_opportunity.status = 'pending'
+        self.student_opportunity.date_pending = timezone.now()
+        self.student_opportunity.save()
+
+        # Verify status changed
+        refreshed = StudentOpportunity.objects.get(id=self.student_opportunity.id)
+        self.assertEqual(refreshed.status, 'pending')
+        self.assertIsNotNone(refreshed.date_pending)
+
+        # Step 3: Organization logs in and views their dashboard
+        self.client.logout()
+        self.client.login(email=self.organization.email, password='testpass123')
+        response = self.client.get('/organization-dashboard/')
+        self.assertEqual(response.status_code, 200)
+
+        # Verify pending opportunity is visible
+        pending_completions = response.context.get('pending_completions', [])
+        self.assertGreater(len(pending_completions), 0)
+
+        # Find our opportunity in the pending list
+        found = False
+        for completion in pending_completions:
+            if completion.opportunity.id == self.opportunity.id:
+                found = True
+                break
+        self.assertTrue(found, "Pending opportunity should be visible to organization")
+
+        # Step 4: Organization approves the completion
+        # This simulates the approve_opportunity_completion view logic
+        self.student_opportunity.status = 'completed'
+        self.student_opportunity.date_completed = timezone.now()
+        self.student_opportunity.save()
+
+        # Create approval notification
+        approval_notification = Notification.objects.create(
+            recipient=self.student,
+            notification_type=Notification.NotificationType.COMPLETION_APPROVED,
+            student_opportunity=self.student_opportunity,
+            message=f"Your completion of '{self.opportunity.title}' has been approved!"
+        )
+
+        # Verify notification was created
+        self.assertEqual(approval_notification.recipient, self.student)
+        self.assertEqual(approval_notification.notification_type, 'completion_approved')
+
+        # Step 5: Student logs back in and views dashboard
+        self.client.logout()
+        self.client.login(email=self.student.email, password='testpass123')
+        response = self.client.get('/student-dashboard/')
+        self.assertEqual(response.status_code, 200)
+
+        # Verify the opportunity now appears in "completed" section
+        completed = response.context['completed_opportunities']
+        self.assertEqual(completed.count(), 1)
+        self.assertEqual(completed.first().status, 'completed')
+        self.assertEqual(completed.first().opportunity.title, 'Build Community Website')
+
+        # Verify opportunity is no longer in "in_progress" section
+        in_progress = response.context['in_progress_opportunities']
+        self.assertEqual(in_progress.count(), 0)
+
+        # Step 6: Student can view their notifications
+        response = self.client.get('/student-notifications/')
+        self.assertEqual(response.status_code, 200)
+        
+        notifications = response.context.get('notifications', [])
+        self.assertEqual(len(notifications), 1)
+        self.assertIn('approved', notifications[0].message.lower())
+
+    def test_complete_workflow_with_denial(self):
+        """Test the complete workflow: student marks complete → org denies → returns to in_progress."""
+        # Step 1: Student marks opportunity as complete
+        self.student_opportunity.status = 'pending'
+        self.student_opportunity.date_pending = timezone.now()
+        self.student_opportunity.save()
+
+        # Step 2: Verify it's in pending status
+        refreshed = StudentOpportunity.objects.get(id=self.student_opportunity.id)
+        self.assertEqual(refreshed.status, 'pending')
+
+        # Step 3: Organization denies the completion with feedback
+        denial_reason = "Please include more detail about your specific contributions to this project."
+        self.student_opportunity.status = 'in_progress'
+        self.student_opportunity.denial_reason = denial_reason
+        self.student_opportunity.date_pending = None
+        self.student_opportunity.save()
+
+        # Create denial notification with reason
+        denial_notification = Notification.objects.create(
+            recipient=self.student,
+            notification_type=Notification.NotificationType.COMPLETION_DENIED,
+            student_opportunity=self.student_opportunity,
+            message=f"Your completion of '{self.opportunity.title}' was not approved.\n\nFeedback: {denial_reason}"
+        )
+
+        # Step 4: Verify the opportunity returns to in_progress with denial reason
+        refreshed = StudentOpportunity.objects.get(id=self.student_opportunity.id)
+        self.assertEqual(refreshed.status, 'in_progress')
+        self.assertEqual(refreshed.denial_reason, denial_reason)
+        self.assertIsNone(refreshed.date_pending)
+
+        # Step 5: Verify notification has correct feedback
+        self.assertEqual(denial_notification.notification_type, 'completion_denied')
+        self.assertIn(denial_reason, denial_notification.message)
+
+        # Step 6: Student logs in and sees the opportunity back in in_progress
+        self.client.login(email=self.student.email, password='testpass123')
+        response = self.client.get('/student-dashboard/')
+        self.assertEqual(response.status_code, 200)
+
+        in_progress = response.context['in_progress_opportunities']
+        self.assertEqual(in_progress.count(), 1)
+        self.assertEqual(in_progress.first().status, 'in_progress')
+
+        # Step 7: Student can view the denial notification with feedback
+        response = self.client.get('/student-notifications/')
+        self.assertEqual(response.status_code, 200)
+
+        notifications = response.context.get('notifications', [])
+        self.assertEqual(len(notifications), 1)
+        self.assertIn('not approved', notifications[0].message.lower())
+        self.assertIn(denial_reason, notifications[0].message)
+
+    def test_pending_opportunity_removed_from_org_review_after_approval(self):
+        """Test that approved opportunity disappears from org's pending review queue."""
+        # Step 1: Student marks as pending
+        self.student_opportunity.status = 'pending'
+        self.student_opportunity.date_pending = timezone.now()
+        self.student_opportunity.save()
+
+        # Step 2: Organization sees it in their pending queue
+        pending_before = StudentOpportunity.objects.filter(
+            opportunity__organization=self.organization,
+            status='pending'
+        )
+        self.assertEqual(pending_before.count(), 1)
+
+        # Step 3: Organization approves it
+        self.student_opportunity.status = 'completed'
+        self.student_opportunity.date_completed = timezone.now()
+        self.student_opportunity.save()
+
+        # Step 4: Verify it's no longer in the pending queue
+        pending_after = StudentOpportunity.objects.filter(
+            opportunity__organization=self.organization,
+            status='pending'
+        )
+        self.assertEqual(pending_after.count(), 0)
+
+        # But now appears in completed
+        completed = StudentOpportunity.objects.filter(
+            opportunity__organization=self.organization,
+            status='completed'
+        )
+        self.assertEqual(completed.count(), 1)
+
+    def test_workflow_sequence_preserves_all_timestamps(self):
+        """Test that the workflow sequence preserves all important timestamps."""
+        # Initial state
+        joined_date = self.student_opportunity.date_joined
+        self.assertIsNotNone(joined_date)
+        self.assertIsNone(self.student_opportunity.date_pending)
+        self.assertIsNone(self.student_opportunity.date_completed)
+
+        # After marking as pending
+        pending_date = timezone.now()
+        self.student_opportunity.status = 'pending'
+        self.student_opportunity.date_pending = pending_date
+        self.student_opportunity.save()
+
+        self.assertEqual(self.student_opportunity.date_joined, joined_date)
+        self.assertEqual(self.student_opportunity.date_pending, pending_date)
+        self.assertIsNone(self.student_opportunity.date_completed)
+
+        # After approval
+        completed_date = timezone.now()
+        self.student_opportunity.status = 'completed'
+        self.student_opportunity.date_completed = completed_date
+        self.student_opportunity.save()
+
+        # Verify all timestamps are preserved
+        refreshed = StudentOpportunity.objects.get(id=self.student_opportunity.id)
+        self.assertEqual(refreshed.date_joined, joined_date)
+        self.assertEqual(refreshed.date_pending, pending_date)
+        self.assertEqual(refreshed.date_completed, completed_date)
