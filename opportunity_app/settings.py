@@ -53,21 +53,29 @@ TEMPLATES = [{
 }]
 WSGI_APPLICATION = 'opportunity_app.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME','opportunity'),
-        'USER': os.getenv('DB_USER','oppo_app'),
-        'PASSWORD': os.getenv('DB_PASSWORD','CSCI340Fall2025'),
-        'HOST': os.getenv('DB_HOST','34.16.174.60'),
-        'PORT': int(os.getenv('DB_PORT','5432')),
-        'CONN_MAX_AGE': 60,
-        'TEST': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': '',  # Empty string = in-memory database
+if os.getenv('DB_ENGINE', 'sqlite').lower() == 'postgresql':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME','opportunity'),
+            'USER': os.getenv('DB_USER','oppo_app'),
+            'PASSWORD': os.getenv('DB_PASSWORD','CSCI340Fall2025'),
+            'HOST': os.getenv('DB_HOST','34.16.174.60'),
+            'PORT': int(os.getenv('DB_PORT','5432')),
+            'CONN_MAX_AGE': 60,
         }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+            'TEST': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': ':memory:',
+            },
+        }
+    }
 
 AUTH_USER_MODEL = 'accounts.User'
 
@@ -84,6 +92,7 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

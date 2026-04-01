@@ -75,8 +75,10 @@ class FAQService:
     def _generate_with_openai(cls, message_content: str, num_suggestions: int) -> List[Dict]:
         """Generate suggestions using OpenAI GPT"""
         try:
-            import openai
-            openai.api_key = os.getenv('OPENAI_API_KEY')
+            from openai import OpenAI
+            import json
+
+            client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
             prompt = f"""
             Based on the following volunteer question, suggest relevant FAQ responses from our database.
@@ -91,17 +93,17 @@ class FAQService:
             Return response as a JSON array.
             """
 
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.3,
                 max_tokens=500,
             )
 
-            # Parse and return response
-            import json
+            # Parse and return response, ensuring we only return num_suggestions
             suggestions = json.loads(response.choices[0].message.content)
-            return suggestions
+            # Ensure we respect the num_suggestions limit
+            return suggestions[:num_suggestions] if len(suggestions) > num_suggestions else suggestions
 
         except Exception as e:
             print(f"Error with OpenAI: {e}")
@@ -140,7 +142,9 @@ class FAQService:
             scored_faqs.sort(key=lambda x: x['relevance_score'], reverse=True)
         
         # Return top N (or all if fewer than N)
-        return scored_faqs[:num_suggestions]
+        # Explicitly limit to num_suggestions
+        result = scored_faqs[:num_suggestions]
+        return result if len(result) > 0 else scored_faqs[:1]
 
     @classmethod
     def add_custom_faq(cls, content: str, keywords: List[str], category: str = 'custom') -> None:

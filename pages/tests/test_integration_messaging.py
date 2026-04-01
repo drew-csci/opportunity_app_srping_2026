@@ -66,7 +66,7 @@ class MessageCreationAndFAQGenerationIntegrationTest(unittest.TestCase):
         message.timestamp = datetime.now()
         message.is_read = False
         
-        print(f"\n✓ Step 1: Message created")
+        print(f"\n[OK] Step 1: Message created")
         print(f"  - ID: {message.id}")
         print(f"  - Content: {message.content}")
         print(f"  - Sender: {message.sender.display_name}")
@@ -79,7 +79,7 @@ class MessageCreationAndFAQGenerationIntegrationTest(unittest.TestCase):
         self.assertLessEqual(len(faq_suggestions), 3,
                             "Should generate at most 3 suggestions")
         
-        print(f"\n✓ Step 2: FAQ suggestions generated")
+        print(f"\n[OK] Step 2: FAQ suggestions generated")
         print(f"  - Count: {len(faq_suggestions)}")
         
         for i, faq in enumerate(faq_suggestions):
@@ -103,7 +103,7 @@ class MessageCreationAndFAQGenerationIntegrationTest(unittest.TestCase):
             'faq_suggestions': faq_suggestions
         }
         
-        print(f"\n✓ Step 3: Response object created")
+        print(f"\n[OK] Step 3: Response object created")
         print(f"  - Fields: {list(response_data.keys())}")
         
         # STEP 4: Verify JSON serialization
@@ -114,7 +114,7 @@ class MessageCreationAndFAQGenerationIntegrationTest(unittest.TestCase):
         self.assertEqual(deserialized['id'], message.id)
         self.assertEqual(deserialized['content'], message_content)
         
-        print(f"\n✓ Step 4: Response serializable to JSON")
+        print(f"\n[OK] Step 4: Response serializable to JSON")
         print(f"  - Size: {len(response_json)} bytes")
         
         # STEP 5: Verify message state
@@ -123,13 +123,13 @@ class MessageCreationAndFAQGenerationIntegrationTest(unittest.TestCase):
         self.assertGreater(len(message.content), 0)
         self.assertFalse(message.is_read)
         
-        print(f"\n✓ Step 5: Message state verified")
-        print(f"  - Conversation linked: ✓")
-        print(f"  - Sender assigned: ✓")
-        print(f"  - is_read = False: ✓")
+        print(f"\n[OK] Step 5: Message state verified")
+        print(f"  - Conversation linked: [OK]")
+        print(f"  - Sender assigned: [OK]")
+        print(f"  - is_read = False: [OK]")
         
         print("\n" + "="*70)
-        print("✅ INTEGRATION TEST PASSED")
+        print("[PASS] INTEGRATION TEST PASSED")
         print("="*70 + "\n")
 
     def test_message_with_keywords_gets_relevant_faqs(self):
@@ -147,10 +147,10 @@ class MessageCreationAndFAQGenerationIntegrationTest(unittest.TestCase):
         self.assertGreater(len(faq_suggestions), 0)
         self.assertGreater(faq_suggestions[0]['relevance_score'], 0.0)
         
-        print(f"✓ Message: {message_content}")
-        print(f"✓ Generated {len(faq_suggestions)} suggestions")
-        print(f"✓ Top relevance: {faq_suggestions[0]['relevance_score']:.2%}")
-        print("\n✅ INTEGRATION TEST PASSED\n")
+        print(f"[OK] Message: {message_content}")
+        print(f"[OK] Generated {len(faq_suggestions)} suggestions")
+        print(f"[OK] Top relevance: {faq_suggestions[0]['relevance_score']:.2%}")
+        print("\n[PASS] INTEGRATION TEST PASSED\n")
 
     def test_multiple_messages_different_faqs(self):
         """
@@ -176,12 +176,12 @@ class MessageCreationAndFAQGenerationIntegrationTest(unittest.TestCase):
         )
         self.assertTrue(different)
         
-        print(f"✓ Message 1: {msg1_content}")
+        print(f"[OK] Message 1: {msg1_content}")
         print(f"  Top FAQ relevance: {faqs1[0]['relevance_score']:.2%}")
-        print(f"\n✓ Message 2: {msg2_content}")
+        print(f"\n[OK] Message 2: {msg2_content}")
         print(f"  Top FAQ relevance: {faqs2[0]['relevance_score']:.2%}")
-        print(f"\n✓ Rankings differ based on content")
-        print("\n✅ INTEGRATION TEST PASSED\n")
+        print(f"\n[OK] Rankings differ based on content")
+        print("\n[PASS] INTEGRATION TEST PASSED\n")
 
     def test_faq_suggestions_ranked_by_relevance(self):
         """
@@ -195,7 +195,7 @@ class MessageCreationAndFAQGenerationIntegrationTest(unittest.TestCase):
         message_content = "volunteer hours schedule availability"
         faqs = FAQService.generate_suggestions(message_content)
         
-        print(f"✓ Message: {message_content}\n")
+        print(f"[OK] Message: {message_content}\n")
         
         for i in range(len(faqs) - 1):
             self.assertGreaterEqual(
@@ -206,8 +206,8 @@ class MessageCreationAndFAQGenerationIntegrationTest(unittest.TestCase):
         for i, faq in enumerate(faqs):
             print(f"  {i+1}. [{faq['relevance_score']:.2%}] {faq['faq_content'][:50]}...")
         
-        print(f"\n✓ Properly ranked (highest first)")
-        print("\n✅ INTEGRATION TEST PASSED\n")
+        print(f"\n[OK] Properly ranked (highest first)")
+        print("\n[PASS] INTEGRATION TEST PASSED\n")
 
     def test_response_json_valid_and_parseable(self):
         """
@@ -238,8 +238,8 @@ class MessageCreationAndFAQGenerationIntegrationTest(unittest.TestCase):
         json_string = json.dumps(response_data)
         deserialized = json.loads(json_string)
         
-        print(f"✓ Serialized to JSON: {len(json_string)} bytes")
-        print(f"✓ Deserialized successfully")
+        print(f"[OK] Serialized to JSON: {len(json_string)} bytes")
+        print(f"[OK] Deserialized successfully")
         print(f"  - Message ID: {deserialized['id']}")
         print(f"  - FAQ count: {len(deserialized['faq_suggestions'])}")
         
@@ -248,12 +248,12 @@ class MessageCreationAndFAQGenerationIntegrationTest(unittest.TestCase):
         for field in required_fields:
             self.assertIn(field, deserialized)
         
-        print(f"✓ All required fields present")
+        print(f"[OK] All required fields present")
         
         # Round-trip
         json_string2 = json.dumps(deserialized)
         deserialized2 = json.loads(json_string2)
         self.assertEqual(deserialized2['id'], deserialized['id'])
         
-        print(f"✓ Round-trip serialization successful")
-        print("\n✅ INTEGRATION TEST PASSED\n")
+        print(f"[OK] Round-trip serialization successful")
+        print("\n[PASS] INTEGRATION TEST PASSED\n")

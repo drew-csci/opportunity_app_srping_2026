@@ -27,6 +27,7 @@ export default function MessageInput({ onSendMessage }) {
   return (
     <div style={{ display: 'flex', gap: 8, padding: 15, borderTop: '1px solid #eee', backgroundColor: '#f9f9f9' }}>
       <textarea
+        aria-label="message-input"
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyPress={handleKeyPress}
