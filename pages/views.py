@@ -1,10 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
 
 from accounts.models import User
-from .models import Achievement, OrganizationFollow
+from .models import Achievement, Opportunity, OrganizationFollow
 from .forms import AchievementForm
 
 
@@ -15,7 +15,48 @@ def welcome(request):
 @login_required
 def screen1(request):
     role = request.user.user_type.title() if hasattr(request.user, 'user_type') else 'User'
-    return render(request, 'pages/screen1.html', {'role': role})
+
+    opportunities = Opportunity.objects.filter(is_active=True)
+
+    query = request.GET.get('q', '').strip()
+    location = request.GET.get('location', '').strip()
+    cause = request.GET.get('cause', '').strip()
+    duration = request.GET.get('duration', '').strip()
+    skills = request.GET.get('skills', '').strip()
+    opp_type = request.GET.get('type', '').strip()
+
+    if query:
+        opportunities = opportunities.filter(
+            Q(title__icontains=query) |
+            Q(description__icontains=query) |
+            Q(cause__icontains=query) |
+            Q(location__icontains=query) |
+            Q(skills_required__icontains=query)
+        )
+    if location:
+        opportunities = opportunities.filter(location__icontains=location)
+    if cause:
+        opportunities = opportunities.filter(cause__icontains=cause)
+    if duration:
+        opportunities = opportunities.filter(duration__icontains=duration)
+    if skills:
+        opportunities = opportunities.filter(skills_required__icontains=skills)
+    if opp_type:
+        opportunities = opportunities.filter(opportunity_type=opp_type)
+
+    context = {
+        'role': role,
+        'opportunities': opportunities,
+        'query': query,
+        'filters': {
+            'location': location,
+            'cause': cause,
+            'duration': duration,
+            'skills': skills,
+            'type': opp_type,
+        },
+    }
+    return render(request, 'pages/screen1.html', context)
 
 
 @login_required
