@@ -1,128 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student Dashboard</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: "Poppins", Arial, sans-serif;
-      background-color: lightblue;
-      color: #333;
-    }
+{% extends "base.html" %}
+{% block content %}
+  <section class="dash-card">
+    <h1>Dashboard {{ role }}</h1>
+    <p class="muted">Hello {{ request.user.display_name }} ({{ role }})</p>
 
-    header {
-      background-color: #ffffff;
-      padding: 15px 40px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+    {% if request.user.user_type == 'student' %}
+      {% include "pages/partials/s1_student.html" %}
+    {% elif request.user.user_type == 'organization' %}
+      {% include "pages/partials/s1_organization.html" %}
+    {% elif request.user.user_type == 'administrator' %}
+      {% include "pages/partials/s1_administrator.html" %}
+    {% else %}
+      <p>No role specific content yet.</p>
+    {% endif %}
 
-    .header-title {
-      font-size: 1.5em;
-      font-weight: 600;
-      color: #0056b3;
-    }
-
-    .dashboard-container {
-      text-align: center;
-      background: #fff;
-      border-radius: 10px;
-      padding: 40px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      width: 80%;
-      max-width: 900px;
-      margin: 40px auto;
-    }
-
-    .section-title {
-      font-weight: 600;
-      font-size: 1.8em;
-      margin-bottom: 10px;
-      color: #222;
-    }
-
-    .subtext {
-      color: #666;
-      font-size: 1.1em;
-      margin-bottom: 40px;
-    }
-
-    .button-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
-      justify-items: center;
-    }
-
-    .dashboard-btn {
-      padding: 18px 10px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      background-color: #fff;
-      font-size: 1em;
-      font-weight: 500;
-      color: #333;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .dashboard-btn:hover {
-      background-color: #007bff;
-      color: #ffffff;
-      border-color: #007bff;
-      box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
-      transform: translateY(-2px);
-    }
-
-    .profile-icon {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      background: #e9ecef;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #495057;
-      font-size: 1.5em;
-      cursor: pointer;
-      border: none;
-      transition: background-color 0.3s ease;
-    }
-
-    .profile-icon:hover {
-      background-color: #dde2e6;
-    }
-  </style>
-</head>
-<body>
-
-  <header>
-    <div class="header-title">Student Dashboard</div>
-    <button class="profile-icon">👤</button>
-  </header>
-
-  <div class="dashboard-container">
-    <div class="section-title">Welcome to your Dashboard</div>
-    <div class="subtext">Select an option below to get started.</div>
-
-    <div class="button-grid">
-      <button class="dashboard-btn">📄 Your Applications</button>
-      <button class="dashboard-btn">👤 Your Profile</button>
-      <button class="dashboard-btn">👥 Peer Activities</button>
-      <button class="dashboard-btn">✍️ Post your Experience</button>
-      <button class="dashboard-btn">🔍 Find new Opportunities</button>
+    <div class="button-row" style="margin-top:1rem;">
+      <a class="btn" href="{% url 'screen2' %}">Go to Screen 2</a>
+      <a class="btn" href="{% url 'screen3' %}">Go to Screen 3</a>
     </div>
-  </div>
-
-</body>
-</html>
+  </section>
+{% endblock %}
 

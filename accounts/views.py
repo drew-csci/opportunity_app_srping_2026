@@ -29,7 +29,7 @@ class CustomLoginView(LoginView):
     # Added extra redirect before lazy screen 1/main homepage redirect, in-case user was trying to access 
     # a specific page before logging in.
     def get_success_url(self):
-        return self.get_redirect_url() or reverse_lazy('screen1')
+        return self.get_redirect_url() or reverse_lazy('dashboard')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
