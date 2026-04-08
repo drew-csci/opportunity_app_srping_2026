@@ -34,3 +34,43 @@ class DashboardEdgeCaseTests(TestCase):
         response = self.client.get(reverse("dashboard"))
         expected_login_url = f"{reverse('login')}?next={reverse('dashboard')}"
         self.assertRedirects(response, expected_login_url)
+
+# An integration test that tests the whole flow of the pathing that the logging-in system partakes in, testing
+# multiple methods that contribute towards it to ensure that everything works as intended (incorporating the
+# first unit test from above as well as something else into one big test).
+class AuthDashboardIntegrationTests(TestCase):
+    """
+    Integration test:
+    login view + auth backend + redirect logic + dashboard view/template
+    (Tests the entire flow of the pathing that we have been working on from the start, essentially).
+    """
+
+    # Mock user account is setup.
+    def setUp(self):
+        User = get_user_model()
+        self.password = "TestPass123!"
+        self.user = User.objects.create_user(
+            email="org_integration@example.com",
+            username="org_integration@example.com",
+            password=self.password,
+            user_type="organization",
+            first_name="Org",
+            last_name="Owner",
+        )
+
+    # Tests the login process, its redirect, and sees if the dashboard renders properly.
+    def test_login_redirects_and_renders_org_dashboard(self):
+        response = self.client.post(
+            reverse("login"),
+            {"username": self.user.email, "password": self.password},
+            follow=True,
+        )
+
+        # Final destination should be dashboard
+        self.assertEqual(response.request["PATH_INFO"], reverse("dashboard"))
+        self.assertEqual(response.status_code, 200)
+
+        # Confirms dashboard page rendered with expected personalized content
+        self.assertTemplateUsed(response, "pages/dashboard.html")
+        self.assertContains(response, "Organization Dashboard")
+        self.assertContains(response, self.user.display_name)
