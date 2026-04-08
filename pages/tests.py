@@ -7,9 +7,9 @@ from .models import Opportunity, Application
 
 User = get_user_model()
 
-class ApplicationTrackingTests(TestCase):
+class ApplicationTrackingTests(TestCase): #$ Test case class for testing the application tracking functionality of the volunteer opportunity application
     def setUp(self):
-        self.student = User.objects.create_user(
+        self.student = User.objects.create_user( # Create a test student user for the tests
             email='student@example.com',
             password='testpass',
             username='studentuser',
@@ -17,7 +17,7 @@ class ApplicationTrackingTests(TestCase):
             first_name='Student',
             last_name='One',
         )
-        self.organization = User.objects.create_user(
+        self.organization = User.objects.create_user( # Create a test organization user for the tests
             email='org@example.com',
             password='testpass',
             username='orguser',
@@ -26,7 +26,7 @@ class ApplicationTrackingTests(TestCase):
             last_name='One',
         )
 
-        self.opportunity = Opportunity.objects.create(
+        self.opportunity = Opportunity.objects.create( # Create a test volunteer opportunity linked to the organization user for the tests
             organization=self.organization,
             title='Volunteer Tutor',
             description='Help K-12 students',
@@ -38,42 +38,42 @@ class ApplicationTrackingTests(TestCase):
             is_active=True,
         )
 
-    def test_application_auto_responded_date_on_accept_and_deny(self):
-        app = Application.objects.create(
+    def test_application_auto_responded_date_on_accept_and_deny(self): #$ Test that the responded_date is automatically set when an application status changes to accepted or denied
+        app = Application.objects.create( # Create a test application with pending status for the student and opportunity
             student=self.student,
             opportunity=self.opportunity,
             status=Application.Status.PENDING,
             message='I would love to help',
         )
 
-        self.assertIsNone(app.responded_date)
+        self.assertIsNone(app.responded_date) # Initially, the responded_date should be None for a pending application
 
-        app.status = Application.Status.ACCEPTED
+        app.status = Application.Status.ACCEPTED # Change the status to accepted and save the application
         app.save()
         self.assertEqual(app.status, Application.Status.ACCEPTED)
         self.assertIsNotNone(app.responded_date)
 
         # Now for denied path
-        app2 = Application.objects.create(
+        app2 = Application.objects.create( #    Create another test application with pending status for the student and opportunity
             student=self.student,
             opportunity=self.opportunity,
             status=Application.Status.PENDING,
             message='Another app',
         )
-        app2.status = Application.Status.DENIED
+        app2.status = Application.Status.DENIED # Change the status to denied and save the application
         app2.save()
         self.assertEqual(app2.status, Application.Status.DENIED)
         self.assertIsNotNone(app2.responded_date)
 
-    def test_apply_to_opportunity_submits_pending_and_save_draft(self):
-        self.client.force_login(self.student)
+    def test_apply_to_opportunity_submits_pending_and_save_draft(self): #$ Test that applying to an opportunity can submit an application as pending or save it as a draft based on the action taken
+        self.client.force_login(self.student) # Log in as the test student user to perform the application actions
 
         # submit as pending
-        url = reverse('apply_to_opportunity', args=[self.opportunity.id])
-        response = self.client.post(url, {'message': 'I am interested', 'action': 'submit'})
+        url = reverse('apply_to_opportunity', args=[self.opportunity.id]) # Get the URL for applying to the opportunity
+        response = self.client.post(url, {'message': 'I am interested', 'action': 'submit'}) # Post a request to apply to the opportunity with a message and action to submit
 
-        application = Application.objects.get(student=self.student, opportunity=self.opportunity)
-        self.assertRedirects(response, reverse('application_detail', args=[application.id]))
+        application = Application.objects.get(student=self.student, opportunity=self.opportunity) # Retrieve the created application from the database for the student and opportunity
+        self.assertRedirects(response, reverse('application_detail', args=[application.id])) # Assert that the response redirects to the application detail page for the created application
         self.assertEqual(application.status, Application.Status.PENDING)
 
         # create a new opportunity for draft test

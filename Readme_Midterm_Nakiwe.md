@@ -7,7 +7,7 @@ This update adds application tracking functionality for students and organizatio
 - `pages/models.py`
   - Added `OpportunityApplication` model (e.g., `student`, `opportunity`, `status`, `submitted_at`, `reviewed_at`, `reviewer`, etc.).
 - `pages/forms.py`
-  - Added `OpportunityApplicationForm` to capture student application entries.
+  - Added `OpportunityApplicationForm` to capture student application entries. 
 - `pages/views.py`
   - Added student flow views: `application_form`, `submit_application`, `my_applications`.
   - Added organization flow views: `organization_applications`, `review_application`.

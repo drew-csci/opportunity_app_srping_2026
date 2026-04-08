@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
   <section class="dash-card">
-    <h1>My Applications</h1>
+    <h1>My Applications</h1> 
 
     {% if applications %}
       <div class="application-list">
@@ -41,7 +41,7 @@
     {% endif %}
   </section>
 
-  <script>
+  <script> // JavaScript to handle opening and closing the application details modal, as well as populating the modal with the relevant application information when a user clicks on the "View Tracking" button for an application.
     const modal = document.getElementById('application-modal');
     const openButtons = document.querySelectorAll('.open-application-popup');
     const closeButton = document.getElementById('application-modal-close');
@@ -51,12 +51,12 @@
     const modalDescription = document.getElementById('modal-description');
     const modalMessage = document.getElementById('modal-message');
 
-    function closeModal() {
+    function closeModal() { 
       modal.classList.remove('is-open');
       modal.setAttribute('aria-hidden', 'true');
     }
 
-    function openModal(event) {
+    function openModal(event) { // When the "View Tracking" button is clicked, this function retrieves the relevant application information from the button's data attributes and populates the modal with that information before displaying it to the user.
       const button = event.currentTarget;
       modalTitle.textContent = button.getAttribute('data-title');
       modalStatus.textContent = 'Status: ' + button.getAttribute('data-status');

@@ -3,7 +3,7 @@
   <section class="dash-card">
     <h1>Organization Applications</h1>
 
-    {% if applications %}
+    {% if applications %} // Check if there are any applications to display. If there are, loop through each application and display the title of the associated opportunity, the name of the student who submitted the application, the current status of the application, a truncated version of the application message, and a button to review the application. If there are no applications, display a message indicating that there are no applications available yet.
       <div class="application-list">
         {% for application in applications %}
           <article class="item-card">

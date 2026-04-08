@@ -10,7 +10,7 @@ class OpportunityAdmin(admin.ModelAdmin):
     search_fields = ('title', 'description', 'cause', 'location', 'skills_required')
 
 
-@admin.register(Application)
+@admin.register(Application) # Register the Application model with the admin site using a custom admin class to display relevant fields and allow filtering and searching of applications based on status, opportunity, and student email.
 class ApplicationAdmin(admin.ModelAdmin):
     list_display = ('opportunity', 'student', 'status', 'applied_date', 'responded_date')
     list_filter = ('status', 'opportunity')

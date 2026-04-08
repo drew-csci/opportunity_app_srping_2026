@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-  <section class="dash-card">
+  <section class="dash-card"> // This template extends the base.html template and defines the content block to display the details of a specific application for an organization to review, including the opportunity title, student name, application status, and application message. If the application is still pending, it also provides buttons for the organization to accept or deny the application, along with a link to go back to the list of applications.
     <h1>Review Application</h1>
     <p class="muted">Opportunity: {{ application.opportunity.title }}</p>
     <p class="muted">Student: {{ application.student.display_name }}</p>
@@ -9,7 +9,7 @@
     <h2>Application message</h2>
     <p>{{ application.message|linebreaksbr }}</p>
 
-    {% if application.status == 'pending' %}
+    {% if application.status == 'pending' %} // Check if the application is still pending. If it is, display buttons for the organization to accept or deny the application, along with a link to go back to the list of applications. If the application has already been accepted or denied, display a message indicating that the application has already been processed and provide a link to go back to the list of applications.
       <form method="post">
         {% csrf_token %}
         <div class="button-row">
@@ -18,7 +18,7 @@
           <a href="{% url 'organization_applications' %}" class="btn">Back</a>
         </div>
       </form>
-    {% else %}
+    {% else %} // If the application has already been accepted or denied, display a message indicating that the application has already been processed and provide a link to go back to the list of applications.
       <p class="muted">This application has already been {{ application.get_status_display }}.</p>
       <div class="button-row">
         <a href="{% url 'organization_applications' %}" class="btn">Back to applications</a>

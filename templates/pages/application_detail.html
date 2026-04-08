@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
-  <section class="dash-card">
+  <section class="dash-card"> // This template extends the base.html template and defines the content block to display the details of a specific application for a student to view, including the opportunity title, application status, applied date, and responded date (if applicable). It also displays the application message and provides buttons for the student to continue editing a draft application, view the associated opportunity information, or go back to the list of their applications.
     <h1>Application Details</h1>
-    <p class="muted">Opportunity: {{ application.opportunity.title }}</p>
+    <p class="muted">Opportunity: {{ application.opportunity.title }}</p> // Display the title of the opportunity associated with the application, along with the current status of the application, the date it was applied, and the date it was responded to (if applicable).
     <p class="muted">Status: {{ application.get_status_display }}</p>
     <p class="muted">Applied on {{ application.applied_date|date:"F j, Y, P" }}</p>
     {% if application.responded_date %}

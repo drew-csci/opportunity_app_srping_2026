@@ -3,7 +3,7 @@
   <section class="dash-card">
     <h1>Volunteer Opportunities</h1>
 
-    {% if opportunities %}
+    {% if opportunities %} //Check if there are any volunteer opportunities to display. If there are, loop through each opportunity and display its title, description, posted date, and a button to view more details about the opportunity. If there are no opportunities, display a message indicating that there are no current opportunities available.
       <div class="application-list">
         {% for opportunity in opportunities %}
           <article class="item-card">
