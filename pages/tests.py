@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 
-# Happy path test for loading a user's specific dashboard view based on their user type, also testing if Dashboard
+# Happy path Unit Test for loading a user's specific dashboard view based on their user type, also testing if Dashboard
 # opens after login.
 class DashboardHappyPathTests(TestCase):
     # Sets up mock user account, which in this case, is of the organization user type.
@@ -25,3 +25,12 @@ class DashboardHappyPathTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Organization Dashboard")
         self.assertContains(response, self.user.display_name)
+
+# Simple edge case test that attempts to see if an anonymous user (not logged in) can access the dashboard, 
+# which should not be allowed and should redirect to login page instead by default.
+class DashboardEdgeCaseTests(TestCase):
+    # Edge case: anonymous users should not access dashboard directly.
+    def test_dashboard_redirects_anonymous_user_to_login(self):
+        response = self.client.get(reverse("dashboard"))
+        expected_login_url = f"{reverse('login')}?next={reverse('dashboard')}"
+        self.assertRedirects(response, expected_login_url)
