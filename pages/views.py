@@ -45,7 +45,7 @@ def student_achievements(request):
         'form': form,
     })
 
-
+@login_required
 def dashboard(request):
     role = request.user.user_type.title() if hasattr(request.user, 'user_type') else 'User'
     return render(request, 'pages/dashboard.html', {'role': role})
