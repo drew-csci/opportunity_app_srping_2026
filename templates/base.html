@@ -18,11 +18,9 @@
             <li><a href="{% url 'screen1' %}">Opportunities</a></li>
             <li><a href="{% url 'followed_organizations' %}">My Organizations</a></li>
             <li><a href="{% url 'student_achievements' %}">Achievements</a></li>
-            {% else %}
             <li><a href="{% url 'screen1' %}">Volunteer Opportunities</a></li>
             <li><a href="{% url 'screen2' %}">Organization</a></li>
             <li><a href="{% url 'screen3' %}">Contact Us</a></li>
-            {% if user.user_type == 'student' %}
             <li><a href="{% url 'volunteer_profile' %}">My Profile</a></li>
             {% endif %}
             <li class="divider"></li>

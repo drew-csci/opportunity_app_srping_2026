@@ -71,6 +71,7 @@ def volunteer_profile(request):
     return render(request, 'pages/volunteer_profile_view.html', {
         'profile': profile,
         'experiences': experiences,
+    })
 
 @login_required
 def organization_profile(request, org_id):
