@@ -1,11 +1,20 @@
+import { useState } from "react";
+
 export default function ChatWindow({
   organization,
   messages,
-  input,
-  setInput,
-  onSend,
-  suggestions,
+  onSendMessage,
+  suggestions = [],
 }) {
+  const [input, setInput] = useState("");
+
+  function handleSend() {
+    const text = input.trim();
+    if (!text) return;
+    onSendMessage(text);
+    setInput("");
+  }
+
   function bubbleStyle(sender) {
     const isMe = sender === "volunteer";
     return {
@@ -19,10 +28,28 @@ export default function ChatWindow({
   }
 
   return (
-    <div style={{ flex: 1, border: "1px solid #ddd", borderRadius: 10, padding: 12 }}>
-      <div style={{ fontWeight: "bold", marginBottom: 10 }}>Chat with: {organization}</div>
+    <div
+      style={{
+        flex: 1,
+        border: "1px solid #ddd",
+        borderRadius: 10,
+        overflow: "hidden",
+        padding: 12,
+      }}
+    >
+      <div
+        style={{
+          fontWeight: "bold",
+          marginBottom: 10,
+          borderBottom: "1px solid #eee",
+          paddingBottom: 10,
+        }}
+      >
+        Chat with: {organization}
+      </div>
 
       <div
+        aria-label="chat-messages"
         style={{
           border: "1px solid #eee",
           borderRadius: 10,
@@ -34,24 +61,30 @@ export default function ChatWindow({
           background: "white",
         }}
       >
-        {messages.map((m) => (
-          <div key={m.id} style={bubbleStyle(m.sender_type)}>
-            <div style={{ fontSize: 12, color: "#555" }}>{m.sender_type}</div>
-            <div>{m.content}</div>
-            <div style={{ fontSize: 11, color: "#999" }}>
-              {new Date(m.created_at).toLocaleString()}
+        {messages.map((message) => (
+          <div key={message.id} style={bubbleStyle(message.sender_type)}>
+            <div style={{ fontSize: 12, color: "#555" }}>
+              {message.sender_type}
             </div>
+            <div>{message.content}</div>
+            {message.created_at && (
+              <div style={{ fontSize: 11, color: "#999" }}>
+                {new Date(message.created_at).toLocaleString()}
+              </div>
+            )}
           </div>
         ))}
       </div>
 
-      {/* ✅ AI-assisted FAQ suggestions (MVP) */}
       <div style={{ marginTop: 12 }}>
-        <div style={{ fontWeight: "bold", marginBottom: 6 }}>AI-assisted FAQ suggestions</div>
+        <div style={{ fontWeight: "bold", marginBottom: 6 }}>
+          AI-assisted FAQ suggestions
+        </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {suggestions.map((s, idx) => (
             <button
               key={idx}
+              type="button"
               onClick={() => setInput(s)}
               style={{
                 border: "1px solid #ddd",
@@ -70,17 +103,33 @@ export default function ChatWindow({
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          marginTop: 12,
+          paddingTop: 10,
+          borderTop: "1px solid #eee",
+        }}
+      >
         <input
+          aria-label="message-input"
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(event) => setInput(event.target.value)}
           placeholder="Type a message..."
-          style={{ flex: 1, padding: 10, borderRadius: 10, border: "1px solid #ddd" }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") onSend();
+          style={{
+            flex: 1,
+            padding: 10,
+            borderRadius: 10,
+            border: "1px solid #ddd",
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") handleSend();
           }}
         />
-        <button onClick={onSend}>Send</button>
+        <button type="button" onClick={handleSend}>
+          Send
+        </button>
       </div>
     </div>
   );
