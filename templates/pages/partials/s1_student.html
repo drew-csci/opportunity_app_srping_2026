@@ -1,7 +1,8 @@
 <h1>Student Dashboard</h1>
 <p>Welcome to your dashboard. From here you can manage your achievements and opportunities.</p>
-<div class="button-row">
+<div class="button-row" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
   <a href="{% url 'opportunity_list' %}" class="btn btn-primary">Browse Opportunities</a>
   <a href="{% url 'my_applications' %}" class="btn">My Applications</a>
-  <a href="{% url 'student_achievements' %}" class="btn">My Achievements</a>
+  <a href="{% url 'student_achievements' %}" class="btn btn-primary">My Achievements</a>
+  <a href="{% url 'followed_organizations' %}" class="btn btn-secondary">Organizations I Follow</a>
 </div>
