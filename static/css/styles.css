@@ -27,7 +27,7 @@ fieldset.form-field { border:1px solid #e5e7eb; border-radius:.6rem; padding:.75
 .messages { list-style:none; padding:0; }
 .messages li { background:#ecfeff; border:1px solid #22d3ee; color:#0e7490; padding:.6rem .9rem; border-radius:.5rem; margin:.5rem 0; }
 .dashboard-shell { margin: 0 auto; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); margin-top: -1.25rem; padding: 2rem 1.25rem 2.5rem; font-family: "Poppins", Arial, sans-serif; background-color: lightblue; color: #333; }
-.dashboard-topbar { background: #ffffff; padding: 15px 40px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); display: flex; justify-content: space-between; align-items: center; border: 1px solid #e5e7eb; border-radius: 10px; border-bottom: none; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.dashboard-topbar { background: #ffffff; padding: 15px 40px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); display: flex; justify-content: space-between; align-items: center; border: 1px solid #e5e7eb; border-radius: 10px; border-bottom: none; margin-bottom: 16px; }
 .dashboard-title { font-size: 1.5em; font-weight: 600; color: #0056b3; }
 .dashboard-profile-icon { width: 50px; height: 50px; border-radius: 50%; background: #e9ecef; display: flex; align-items: center; justify-content: center; color: #495057; font-size: 1.2rem; cursor: pointer; border: none; transition: background-color 0.3s ease; }
 .dashboard-profile-icon:hover { background-color: #dde2e6; }
