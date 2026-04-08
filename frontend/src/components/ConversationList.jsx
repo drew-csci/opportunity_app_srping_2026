@@ -1,9 +1,23 @@
 export default function ConversationList({ conversations, activeId, onSelect }) {
   return (
-    <div style={{ width: 280, border: "1px solid #ddd", borderRadius: 10, overflow: "hidden" }}>
-      <div style={{ padding: 10, borderBottom: "1px solid #eee", fontWeight: 700 }}>
+    <div
+      style={{
+        width: 280,
+        border: "1px solid #ddd",
+        borderRadius: 10,
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          padding: 10,
+          borderBottom: "1px solid #eee",
+          fontWeight: 700,
+        }}
+      >
         Conversations
       </div>
+
       {conversations.length === 0 ? (
         <div style={{ padding: 12, color: "#666" }}>No conversations</div>
       ) : (
@@ -23,11 +37,21 @@ export default function ConversationList({ conversations, activeId, onSelect }) 
             }}
           >
             <div style={{ fontWeight: 600 }}>{conversation.organization_name}</div>
-            <div style={{ fontSize: 12, color: "#666" }}>{conversation.volunteer_name}</div>
+
+            {conversation.volunteer_name && (
+              <div style={{ fontSize: 12, color: "#666" }}>
+                {conversation.volunteer_name}
+              </div>
+            )}
+
+            {conversation.last_message_at && (
+              <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
+                {new Date(conversation.last_message_at).toLocaleString()}
+              </div>
+            )}
           </button>
         ))
       )}
     </div>
   );
 }
-
