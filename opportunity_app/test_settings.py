@@ -1,14 +1,36 @@
 """
-Test-only settings: inherits everything from settings.py but replaces
-the remote PostgreSQL database with a local SQLite file so that the
-test runner can create/destroy the test database without needing
-CREATEDB privileges on the shared server.
+Test settings for Django tests.
+Uses SQLite instead of PostgreSQL for easier testing.
 """
-from .settings import *  # noqa: F401, F403
+import os
+from pathlib import Path
 
+# Import all settings from base settings
+from .settings import *
+
+# Override database settings for testing
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'test_db.sqlite3',
+        'NAME': ':memory:',  # Use in-memory database for faster tests
     }
 }
+
+# Disable migrations for faster tests (optional)
+class DisableMigrations:
+    def __contains__(self, item):
+        return True
+
+    def __getitem__(self, item):
+        return None
+
+
+MIGRATION_MODULES = DisableMigrations()
+
+# Disable password validation for tests (speeds up user creation)
+AUTH_PASSWORD_VALIDATORS = []
+
+# Use simple password hasher for faster tests
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.MD5PasswordHasher',
+]
