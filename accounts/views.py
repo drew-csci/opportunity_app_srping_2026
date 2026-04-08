@@ -26,7 +26,7 @@ class CustomLoginView(LoginView):
     authentication_form = EmailAuthenticationForm
     redirect_authenticated_user = True
 
-    # Added extra redirect before lazy screen 1/main homepage redirect, in-case user was trying to access 
+    # Added extra redirect before lazy dashboard/main homepage redirect, in-case user was trying to access 
     # a specific page before logging in.
     def get_success_url(self):
         return self.get_redirect_url() or reverse_lazy('dashboard')
