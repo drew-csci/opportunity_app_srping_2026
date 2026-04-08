@@ -1,0 +1,364 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ student.display_name }} - Applicant Profile{% endblock %}
+
+{% block content %}
+<div class="applicant-profile-page">
+    <!-- Back Link -->
+    <a href="{% url 'organization_dashboard' %}" class="back-link" id="back-to-dashboard">← Back to Dashboard</a>
+
+    <!-- Student Profile Card -->
+    <div class="profile-card">
+        <div class="profile-header-section">
+            <div class="profile-avatar">
+                {{ student.display_name|first }}
+            </div>
+            <div class="profile-info">
+                <h1>{{ student.display_name }}</h1>
+                <p class="profile-email">{{ student.email }}</p>
+                <p class="profile-meta">Student · Joined {{ student.date_joined|date:"F Y" }}</p>
+            </div>
+        </div>
+
+        <!-- Student Achievements -->
+        <div class="achievements-section">
+            <h2>🏆 Achievements</h2>
+            {% if achievements %}
+            <div class="achievements-grid">
+                {% for achievement in achievements %}
+                <div class="achievement-card">
+                    <h3>{{ achievement.title }}</h3>
+                    <p>{{ achievement.description }}</p>
+                    <small class="achievement-date">{{ achievement.date_completed|date:"F d, Y" }}</small>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-message">No achievements recorded yet</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Applications to Your Opportunities -->
+    <div class="applications-section">
+        <h2>Applications to Your Opportunities</h2>
+        {% if applications %}
+        <div class="applications-list">
+            {% for app in applications %}
+            <div class="application-card-detail status-{{ app.status }}" id="app-detail-{{ app.id }}">
+                <div class="app-detail-header">
+                    <h3>{{ app.opportunity.title }}</h3>
+                    <span class="status-pill pill-{{ app.status }}">{{ app.get_status_display }}</span>
+                </div>
+                <p class="app-detail-date">Applied: {{ app.applied_date|date:"F d, Y H:i" }}</p>
+                {% if app.message %}
+                <div class="app-detail-message">
+                    <strong>Message:</strong> {{ app.message }}
+                </div>
+                {% endif %}
+
+                {% if app.status == 'pending' %}
+                <div class="app-detail-actions">
+                    <button class="action-btn-sm action-accept accept-btn" data-app-id="{{ app.id }}" id="accept-detail-{{ app.id }}">
+                        ✅ Accept
+                    </button>
+                    <button class="action-btn-sm action-decline decline-btn" data-app-id="{{ app.id }}" id="decline-detail-{{ app.id }}">
+                        ❌ Decline
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty-message">No applications from this student</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('.accept-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const appId = this.dataset.appId;
+        handleApplication(appId, 'accept');
+    });
+});
+
+document.querySelectorAll('.decline-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const appId = this.dataset.appId;
+        if (confirm('Are you sure you want to decline this application?')) {
+            handleApplication(appId, 'decline');
+        }
+    });
+});
+
+function handleApplication(appId, action) {
+    fetch(`/org/application/${appId}/${action}/`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(err => {
+        alert('Something went wrong. Please try again.');
+        console.error(err);
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.applicant-profile-page {
+    padding: 2rem 1rem;
+    max-width: 960px;
+    margin: 0 auto;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+.back-link:hover {
+    color: #1d4ed8;
+}
+
+.profile-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.profile-header-section {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.profile-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.5rem;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.profile-info h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.profile-email {
+    margin: 0.25rem 0 0;
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+.profile-meta {
+    margin: 0.25rem 0 0;
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+.achievements-section h2 {
+    margin: 0 0 1rem 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.achievement-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1.25rem;
+    transition: transform 0.2s;
+}
+
+.achievement-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+.achievement-card h3 {
+    margin: 0 0 0.5rem;
+    font-size: 0.95rem;
+    color: #0f172a;
+}
+
+.achievement-card p {
+    margin: 0 0 0.5rem;
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.achievement-date {
+    color: #94a3b8;
+    font-size: 0.8rem;
+}
+
+/* Applications Section */
+.applications-section {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.applications-section h2 {
+    margin: 0 0 1.5rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.applications-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.application-card-detail {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    background: #f8fafc;
+    transition: all 0.2s;
+}
+
+.application-card-detail.status-accepted { border-left: 4px solid #22c55e; }
+.application-card-detail.status-declined { border-left: 4px solid #ef4444; opacity: 0.7; }
+.application-card-detail.status-pending  { border-left: 4px solid #f59e0b; }
+
+.app-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.app-detail-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.status-pill {
+    padding: 0.3rem 0.7rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.pill-accepted { background: #dcfce7; color: #166534; }
+.pill-declined { background: #fee2e2; color: #991b1b; }
+.pill-pending  { background: #fef3c7; color: #92400e; }
+
+.app-detail-date {
+    margin: 0 0 0.5rem;
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.app-detail-message {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: #fff;
+    border-left: 3px solid #2563eb;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: #334155;
+}
+
+.app-detail-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.action-btn-sm {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.2s;
+}
+
+.action-accept { background: #22c55e; color: white; }
+.action-accept:hover { background: #16a34a; box-shadow: 0 2px 6px rgba(34,197,94,0.3); }
+
+.action-decline { background: #fff; color: #ef4444; border: 1px solid #fecaca; }
+.action-decline:hover { background: #fef2f2; border-color: #ef4444; }
+
+.empty-message {
+    text-align: center;
+    color: #94a3b8;
+    padding: 2rem;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 640px) {
+    .profile-header-section { flex-direction: column; text-align: center; }
+    .app-detail-header { flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+    .app-detail-actions { flex-direction: column; }
+}
+</style>
+{% endblock %}

@@ -27,6 +27,9 @@ class CustomLoginView(LoginView):
     redirect_authenticated_user = True
 
     def get_success_url(self):
+        # Redirect organizations to their dashboard
+        if self.request.user.user_type == 'organization':
+            return reverse_lazy('organization_dashboard')
         return reverse_lazy('screen1')
 
     def get_context_data(self, **kwargs):
