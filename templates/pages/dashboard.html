@@ -1,23 +1,41 @@
 {% extends "base.html" %}
+
 {% block content %}
-  <section class="dash-card">
-    <h1>Dashboard {{ role }}</h1>
-    <p class="muted">Hello {{ request.user.display_name }} ({{ role }})</p>
+  <section class="dashboard-shell">
+    <header class="dashboard-topbar">
+      <div class="dashboard-title">{{ role }} Dashboard</div>
+      <button class="dashboard-profile-icon">👤</button>
+    </header>
 
-    {% if request.user.user_type == 'student' %}
-      {% include "pages/partials/s1_student.html" %}
-    {% elif request.user.user_type == 'organization' %}
-      {% include "pages/partials/s1_organization.html" %}
-    {% elif request.user.user_type == 'administrator' %}
-      {% include "pages/partials/s1_administrator.html" %}
-    {% else %}
-      <p>No role specific content yet.</p>
-    {% endif %}
+    <div class="dashboard-panel">
+      <div class="dashboard-section-title">Welcome to your Dashboard</div>
+      <div class="dashboard-subtext">Hello {{ request.user.display_name }} ({{ role }}). Select an option below to get started.</div>
 
-    <div class="button-row" style="margin-top:1rem;">
-      <a class="btn" href="{% url 'screen2' %}">Go to Screen 2</a>
-      <a class="btn" href="{% url 'screen3' %}">Go to Screen 3</a>
+      <div class="dashboard-button-grid">
+        {% if request.user.user_type == 'student' %}
+          <a class="dashboard-btn" href="{% url 'student_achievements' %}">📄 My Achievements</a>
+          <button class="dashboard-btn">📄 Your Applications</button>
+          <button class="dashboard-btn">👤 Your Profile</button>
+          <a class="dashboard-btn" href="{% url 'screen1' %}">🔍 Find Opportunities</a>
+          <a class="dashboard-btn" href="{% url 'screen2' %}">👥 Organization Updates</a>
+          <button class="dashboard-btn">👥 Peer Activities</button>
+          <a class="dashboard-btn" href="{% url 'screen3' %}">✍️ Share Experience</a>
+        {% elif request.user.user_type == 'organization' %}
+          <a class="dashboard-btn" href="{% url 'screen1' %}">📄 Opportunity Overview</a>
+          <button class="dashboard-btn">👤 Your Profile</button>
+          <a class="dashboard-btn" href="{% url 'screen2' %}">👥 Manage Organization</a>
+          <a class="dashboard-btn" href="{% url 'screen3' %}">✉️ Contact Students</a>
+        {% elif request.user.user_type == 'administrator' %}
+          <button class="dashboard-btn">👤 Your Profile</button>
+          <a class="dashboard-btn" href="{% url 'screen1' %}">📊 Platform Summary</a>
+          <a class="dashboard-btn" href="{% url 'screen2' %}">🛠 User Management</a>
+          <a class="dashboard-btn" href="{% url 'screen3' %}">📬 Support Queue</a>
+        {% else %}
+          <a class="dashboard-btn" href="{% url 'screen1' %}">Go to Screen 1</a>
+          <a class="dashboard-btn" href="{% url 'screen2' %}">Go to Screen 2</a>
+          <a class="dashboard-btn" href="{% url 'screen3' %}">Go to Screen 3</a>
+        {% endif %}
+      </div>
     </div>
   </section>
 {% endblock %}
-
