@@ -19,3 +19,8 @@ urlpatterns = [
     path('org/messages/', views.organization_messages, name='organization_messages'),
     path('org/opportunities/', views.organization_opportunities, name='organization_opportunities'),
 ]
+    path('organization/<int:org_id>/', views.organization_profile, name='organization_profile'),
+    path('organization/<int:org_id>/follow/', views.follow_organization, name='follow_organization'),
+    path('organization/<int:org_id>/unfollow/', views.unfollow_organization, name='unfollow_organization'),
+    path('following/', views.followed_organizations, name='followed_organizations'),
+]

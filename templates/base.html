@@ -20,6 +20,10 @@
             <li><a href="{% url 'organization_profile' %}">Profile</a></li>
             <li><a href="{% url 'organization_messages' %}">Messages</a></li>
             <li><a href="{% url 'organization_profile' %}">Settings</a></li>
+            {% if user.user_type == 'student' %}
+            <li><a href="{% url 'screen1' %}">Opportunities</a></li>
+            <li><a href="{% url 'followed_organizations' %}">My Organizations</a></li>
+            <li><a href="{% url 'student_achievements' %}">Achievements</a></li>
             {% else %}
             <li><a href="{% url 'screen1' %}">Volunteer Opportunities</a></li>
             <li><a href="{% url 'screen2' %}">Organization</a></li>
