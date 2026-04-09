@@ -1,23 +1,30 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse, HttpResponseForbidden
 from django.utils import timezone
-from django.http import HttpResponseForbidden
+from django.views.decorators.http import require_http_methods
 
-from .models import Achievement, StudentOpportunity, Opportunity, Notification
-from .forms import AchievementForm, MarkOpportunityPendingForm, DenyOpportunityForm
+from accounts.models import User
+
+from .models import Achievement, StudentOpportunity, Opportunity, OrganizationFollow, Notification, VolunteerProfile, VolunteerExperience
+from .forms import AchievementForm, MarkOpportunityPendingForm, DenyOpportunityForm, VolunteerProfileForm, VolunteerExperienceForm
+
 
 def welcome(request):
     return render(request, 'pages/welcome.html')
+
 
 @login_required
 def screen1(request):
     role = request.user.user_type.title() if hasattr(request.user, 'user_type') else 'User'
     return render(request, 'pages/screen1.html', {'role': role})
 
+
 @login_required
 def screen2(request):
     role = request.user.user_type.title() if hasattr(request.user, 'user_type') else 'User'
     return render(request, 'pages/screen2.html', {'role': role})
+
 
 @login_required
 def screen3(request):
@@ -28,7 +35,6 @@ def screen3(request):
 @login_required
 def student_achievements(request):
     if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
-        # Redirect non-students
         return redirect('screen1')
 
     if request.method == 'POST':
@@ -129,6 +135,70 @@ def mark_opportunity_pending(request, student_opportunity_id):
         'student_opportunity': student_opportunity,
     })
 
+@login_required
+def volunteer_profile(request):
+    try:
+        profile = VolunteerProfile.objects.get(user=request.user)
+    except VolunteerProfile.DoesNotExist:
+        return redirect('volunteer_profile_edit')
+    experiences = VolunteerExperience.objects.filter(volunteer=request.user)
+    return render(request, 'pages/volunteer_profile_view.html', {
+        'profile': profile,
+        'experiences': experiences,
+    })
+
+@login_required
+def organization_profile(request, org_id):
+    """Display an organization's profile with follow/unfollow button and opportunities."""
+    organization = get_object_or_404(User, id=org_id, user_type='organization')
+    is_following = False
+
+    if request.user.user_type == 'student':
+        is_following = OrganizationFollow.objects.filter(
+            student=request.user,
+            organization=organization,
+        ).exists()
+
+    # TODO: Query opportunities when Opportunity model is added
+    opportunities = []
+
+    return render(request, 'pages/organization_profile.html', {
+        'organization': organization,
+        'is_following': is_following,
+        'opportunities': opportunities,
+    })
+
+
+@login_required
+def volunteer_profile_edit(request):
+    profile, _ = VolunteerProfile.objects.get_or_create(user=request.user)
+    if request.method == 'POST':
+        form = VolunteerProfileForm(request.POST)
+        if form.is_valid():
+            request.user.first_name = form.cleaned_data['first_name']
+            request.user.last_name = form.cleaned_data['last_name']
+            request.user.email = form.cleaned_data['email']
+            request.user.save()
+            profile.phone = form.cleaned_data['phone']
+            profile.bio = form.cleaned_data['bio']
+            profile.skills = form.cleaned_data['skills']
+            profile.save()
+            return redirect('volunteer_profile')
+    else:
+        form = VolunteerProfileForm(initial={
+            'first_name': request.user.first_name,
+            'last_name': request.user.last_name,
+            'email': request.user.email,
+            'phone': profile.phone,
+            'bio': profile.bio,
+            'skills': profile.skills,
+        })
+    experiences = VolunteerExperience.objects.filter(volunteer=request.user)
+    return render(request, 'pages/volunteer_profile_edit.html', {
+        'form': form,
+        'experiences': experiences,
+    })
+
 
 @login_required
 def organization_dashboard(request):
@@ -194,6 +264,34 @@ def approve_opportunity_completion(request, student_opportunity_id):
 
     return render(request, 'pages/approve_opportunity.html', {
         'student_opportunity': student_opportunity,
+    })
+@login_required
+def experience_add(request):
+    if request.method == 'POST':
+        form = VolunteerExperienceForm(request.POST)
+        if form.is_valid():
+            experience = form.save(commit=False)
+            experience.volunteer = request.user
+            experience.save()
+            return redirect('volunteer_profile_edit')
+    else:
+        form = VolunteerExperienceForm()
+    return render(request, 'pages/volunteer_profile_edit.html', {'form': form})
+
+
+@login_required
+def experience_edit(request, pk):
+    experience = get_object_or_404(VolunteerExperience, pk=pk, volunteer=request.user)
+    if request.method == 'POST':
+        form = VolunteerExperienceForm(request.POST, instance=experience)
+        if form.is_valid():
+            form.save()
+            return redirect('volunteer_profile_edit')
+    else:
+        form = VolunteerExperienceForm(instance=experience)
+    return render(request, 'pages/volunteer_profile_edit.html', {
+        'form': form,
+        'experience': experience,
     })
 
 
@@ -264,3 +362,69 @@ def student_notifications(request):
     }
 
     return render(request, 'pages/student_notifications.html', context)
+@login_required
+def experience_delete(request, pk):
+    experience = get_object_or_404(VolunteerExperience, pk=pk, volunteer=request.user)
+    if request.method == 'POST':
+        experience.delete()
+    return redirect('volunteer_profile_edit')
+def follow_organization(request, org_id):
+    """Follow an organization. Supports both regular POST and AJAX requests."""
+    if request.user.user_type != 'student':
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Only students can follow organizations'}, status=403)
+        return redirect('screen1')
+
+    organization = get_object_or_404(User, id=org_id, user_type='organization')
+    follow_obj, created = OrganizationFollow.objects.get_or_create(
+        student=request.user,
+        organization=organization,
+    )
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'success': True,
+            'following': True,
+            'message': f'You are now following {organization.display_name}'
+        })
+    
+    return redirect('organization_profile', org_id=org_id)
+
+
+@login_required
+def unfollow_organization(request, org_id):
+    """Unfollow an organization. Supports both regular POST and AJAX requests."""
+    if request.user.user_type != 'student':
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Only students can unfollow organizations'}, status=403)
+        return redirect('screen1')
+
+    organization = get_object_or_404(User, id=org_id, user_type='organization')
+    OrganizationFollow.objects.filter(
+        student=request.user,
+        organization=organization,
+    ).delete()
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'success': True,
+            'following': False,
+            'message': f'You unfollowed {organization.display_name}'
+        })
+    
+    return redirect('organization_profile', org_id=org_id)
+
+
+@login_required
+def followed_organizations(request):
+    """Show all organizations the logged-in student follows."""
+    if request.user.user_type != 'student':
+        return redirect('screen1')
+
+    follows = OrganizationFollow.objects.filter(
+        student=request.user,
+    ).select_related('organization')
+
+    return render(request, 'pages/followed_organizations.html', {
+        'follows': follows,
+    })

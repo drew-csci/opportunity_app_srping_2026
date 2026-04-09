@@ -1,23 +1,37 @@
 """
-Test settings for running unit tests with SQLite in-memory database.
-Inherits from main settings but overrides database configuration.
+Test settings for Django tests (with SQLite in-memory database).
+Uses SQLite instead of PostgreSQL for easier testing.
+For certain tests, inherits from main settings but overrides database configuration.
 """
+import os
+from pathlib import Path
 
-from opportunity_app.settings import *
+# Import all settings from base settings
+from .settings import *
 
-# Override database to use SQLite for tests
+# Override database settings for testing
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',  # Use in-memory database for tests
+        'NAME': ':memory:',  # Use in-memory database for faster tests
     }
 }
 
-# Disable migrations for faster testing
+# Disable migrations for faster tests (optional)
 class DisableMigrations:
     def __contains__(self, item):
         return True
+
     def __getitem__(self, item):
         return None
 
+
 MIGRATION_MODULES = DisableMigrations()
+
+# Disable password validation for tests (speeds up user creation)
+AUTH_PASSWORD_VALIDATORS = []
+
+# Use simple password hasher for faster tests
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.MD5PasswordHasher',
+]
