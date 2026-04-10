@@ -10,7 +10,6 @@ class AchievementForm(forms.ModelForm):
             'date_completed': forms.DateInput(attrs={'type': 'date'}),
         }
 
-
 class ApplicationForm(forms.ModelForm):
     class Meta:
         model = Application
