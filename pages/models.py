@@ -78,6 +78,7 @@ class Application(models.Model): # New model for student applications to volunte
 
     def __str__(self): # Return a string representation of the application showing the student's name, opportunity title, and current status
         return f'{self.student.display_name} — {self.opportunity.title} ({self.get_status_display()})'
+    
 class VolunteerProfile(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
