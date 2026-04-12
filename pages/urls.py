@@ -24,6 +24,10 @@ urlpatterns = [
 
 
     path('organization/<int:org_id>/', views.organization_profile, name='organization_profile'),
+    path('organization/<int:org_id>/edit/', views.organization_profile_edit, name='organization_profile_edit'),
+    path('organization/<int:org_id>/metrics/add/', views.organization_metric_add, name='organization_metric_add'),
+    path('organization/<int:org_id>/metrics/<int:pk>/edit/', views.organization_metric_edit, name='organization_metric_edit'),
+    path('organization/<int:org_id>/metrics/<int:pk>/delete/', views.organization_metric_delete, name='organization_metric_delete'),
     path('organization/<int:org_id>/follow/', views.follow_organization, name='follow_organization'),
     path('organization/<int:org_id>/unfollow/', views.unfollow_organization, name='unfollow_organization'),
     path('following/', views.followed_organizations, name='followed_organizations'),

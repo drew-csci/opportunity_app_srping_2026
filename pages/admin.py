@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Achievement, Opportunity, Application
+from .models import Achievement, Opportunity, Application, OrganizationProfile, OrganizationImpactMetric
 
 
 @admin.register(Opportunity)
@@ -22,3 +22,15 @@ class AchievementAdmin(admin.ModelAdmin):
     list_display = ('title', 'student', 'date_completed')
     list_filter = ('date_completed',)
     search_fields = ('title', 'description', 'student__email')
+
+
+@admin.register(OrganizationProfile)
+class OrganizationProfileAdmin(admin.ModelAdmin):
+    list_display = ('organization', 'organization_name', 'location')
+    search_fields = ('organization__email', 'organization__first_name', 'organization__last_name', 'organization_name', 'location')
+
+
+@admin.register(OrganizationImpactMetric)
+class OrganizationImpactMetricAdmin(admin.ModelAdmin):
+    list_display = ('title', 'value', 'organization_profile')
+    search_fields = ('title', 'value', 'description', 'organization_profile__organization__email')

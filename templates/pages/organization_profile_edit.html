@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="profile-page">
+
+  <div class="profile-header-row">
+    <div>
+      <h1>Organization Profile</h1>
+      <p class="muted">Update your organization information and impact metrics.</p>
+    </div>
+  </div>
+
+  <section class="dash-card">
+    <h2 class="profile-section-heading">Organization Information</h2>
+    <form method="post" action="{% url 'organization_profile_edit' organization.id %}">
+      {% csrf_token %}
+      <div class="profile-form-grid">
+        <div class="form-field">
+          <label for="{{ form.organization_name.id_for_label }}">Organization Name</label>
+          {{ form.organization_name }}
+          {% if form.organization_name.errors %}<div class="error">{{ form.organization_name.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="form-field">
+          <label for="{{ form.location.id_for_label }}">Location</label>
+          {{ form.location }}
+          {% if form.location.errors %}<div class="error">{{ form.location.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+      <div class="form-field">
+        <label for="{{ form.mission.id_for_label }}">Mission</label>
+        {{ form.mission }}
+        {% if form.mission.errors %}<div class="error">{{ form.mission.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.contact_info.id_for_label }}">Contact Info</label>
+        {{ form.contact_info }}
+        {% if form.contact_info.errors %}<div class="error">{{ form.contact_info.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="button-row">
+        <button type="submit" class="btn primary">Save Changes</button>
+        <a class="btn" href="{% url 'organization_profile' organization.id %}">View Profile</a>
+      </div>
+    </form>
+  </section>
+
+  <section class="dash-card">
+    <div class="section-header-row">
+      <h2>Impact Metrics</h2>
+      <a class="btn primary" href="{% url 'organization_metric_add' organization.id %}">+ Add Metric</a>
+    </div>
+
+    {% if impact_metrics %}
+      {% for metric in impact_metrics %}
+      <div class="experience-item experience-item--readonly">
+        <div class="experience-main">
+          <div class="experience-role">{{ metric.title }} <span class="timeline-badge">{{ metric.value }}</span></div>
+          {% if metric.description %}<p class="experience-desc">{{ metric.description }}</p>{% endif %}
+        </div>
+        <div class="experience-actions">
+          <a class="btn" href="{% url 'organization_metric_edit' organization.id metric.pk %}">Edit</a>
+          <form method="post" action="{% url 'organization_metric_delete' organization.id metric.pk %}" style="display:inline" onsubmit="return confirm('Delete this metric?')">
+            {% csrf_token %}
+            <button type="submit" class="btn danger">Delete</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="muted">No impact metrics yet. Add the first one to show your organization’s impact.</p>
+    {% endif %}
+  </section>
+
+  {% if metric_form %}
+  <section class="dash-card">
+    <h2 class="profile-section-heading">{% if editing_metric %}Edit Metric{% else %}Add Metric{% endif %}</h2>
+    <form method="post" action="{{ metric_form_action|default:request.path }}">
+      {% csrf_token %}
+      <div class="profile-form-grid">
+        <div class="form-field">
+          <label for="{{ metric_form.title.id_for_label }}">Metric Title</label>
+          {{ metric_form.title }}
+          {% if metric_form.title.errors %}<div class="error">{{ metric_form.title.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="form-field">
+          <label for="{{ metric_form.value.id_for_label }}">Value</label>
+          {{ metric_form.value }}
+          {% if metric_form.value.errors %}<div class="error">{{ metric_form.value.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+      <div class="form-field">
+        <label for="{{ metric_form.description.id_for_label }}">Description</label>
+        {{ metric_form.description }}
+        {% if metric_form.description.errors %}<div class="error">{{ metric_form.description.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="button-row">
+        <button type="submit" class="btn primary">{% if editing_metric %}Update Metric{% else %}Save Metric{% endif %}</button>
+        <a class="btn" href="{% url 'organization_profile_edit' organization.id %}">Back</a>
+      </div>
+    </form>
+  </section>
+  {% endif %}
+
+</div>
+{% endblock %}

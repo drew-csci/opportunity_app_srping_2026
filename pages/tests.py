@@ -4,8 +4,8 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from .forms import VolunteerProfileForm
-from .models import VolunteerExperience
+from .forms import VolunteerProfileForm, OrganizationProfileForm, OrganizationImpactMetricForm
+from .models import VolunteerExperience, OrganizationProfile, OrganizationImpactMetric
 
 
 class VolunteerProfileTests(TestCase):
@@ -75,6 +75,7 @@ class VolunteerProfileTests(TestCase):
         self.assertContains(response, 'Jane Doe')
         self.assertContains(response, 'jane.doe@example.com')
         self.assertContains(response, '555-9876')
+
         self.assertContains(response, 'Helping Hands')
 
         experience = VolunteerExperience.objects.filter(volunteer=user).first()
@@ -93,6 +94,106 @@ class VolunteerProfileTests(TestCase):
         self.assertContains(response, 'Jane Doe')
         self.assertContains(response, 'jane.doe@example.com')
         self.assertContains(response, '555-9876')
+
+
+class OrganizationProfileTests(TestCase):
+    def setUp(self):
+        self.organization = User.objects.create_user(
+            username='org1',
+            email='org1@example.com',
+            password='testpass123',
+            user_type='organization',
+            first_name='Helping',
+            last_name='Hands',
+        )
+        self.student = User.objects.create_user(
+            username='student1',
+            email='student1@example.com',
+            password='testpass123',
+            user_type='student',
+        )
+
+    def test_organization_profile_form_valid_data(self):
+        form = OrganizationProfileForm(data={
+            'organization_name': 'Helping Hands',
+            'mission': 'Create measurable community impact.',
+            'location': 'Newark, NJ',
+            'contact_info': 'hello@helpinghands.org',
+        })
+
+        self.assertTrue(form.is_valid())
+
+    def test_organization_profile_workflow_persists_after_logout(self):
+        self.client.login(username=self.organization.email, password='testpass123')
+
+        response = self.client.post(reverse('organization_profile_edit', args=[self.organization.id]), {
+            'organization_name': 'Helping Hands',
+            'mission': 'Create measurable community impact.',
+            'location': 'Newark, NJ',
+            'contact_info': 'hello@helpinghands.org',
+        })
+        self.assertRedirects(response, reverse('organization_profile', args=[self.organization.id]))
+
+        response = self.client.post(reverse('organization_metric_add', args=[self.organization.id]), {
+            'title': 'People Served',
+            'value': '1,200',
+            'description': 'Community members supported this year.',
+        })
+        self.assertRedirects(response, reverse('organization_profile_edit', args=[self.organization.id]))
+
+        profile = OrganizationProfile.objects.get(organization=self.organization)
+        metric = OrganizationImpactMetric.objects.get(organization_profile=profile)
+
+        response = self.client.get(reverse('organization_profile', args=[self.organization.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Helping Hands')
+        self.assertContains(response, 'Create measurable community impact.')
+        self.assertContains(response, 'Newark, NJ')
+        self.assertContains(response, 'hello@helpinghands.org')
+        self.assertContains(response, 'People Served')
+        self.assertContains(response, '1,200')
+
+        self.client.logout()
+        self.client.login(username=self.organization.email, password='testpass123')
+
+        response = self.client.get(reverse('organization_profile', args=[self.organization.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Helping Hands')
+        self.assertContains(response, 'People Served')
+
+        response = self.client.post(reverse('organization_metric_edit', args=[self.organization.id, metric.pk]), {
+            'title': 'People Served',
+            'value': '1,450',
+            'description': 'Community members supported this year.',
+        })
+        self.assertRedirects(response, reverse('organization_profile_edit', args=[self.organization.id]))
+        metric.refresh_from_db()
+        self.assertEqual(metric.value, '1,450')
+
+        response = self.client.post(reverse('organization_metric_delete', args=[self.organization.id, metric.pk]))
+        self.assertRedirects(response, reverse('organization_profile_edit', args=[self.organization.id]))
+        self.assertEqual(OrganizationImpactMetric.objects.count(), 0)
+
+    def test_student_can_view_profile_without_edit_controls(self):
+        profile = OrganizationProfile.objects.create(
+            organization=self.organization,
+            organization_name='Helping Hands',
+            mission='Create measurable community impact.',
+            location='Newark, NJ',
+            contact_info='hello@helpinghands.org',
+        )
+        OrganizationImpactMetric.objects.create(
+            organization_profile=profile,
+            title='People Served',
+            value='1,200',
+            description='Community members supported this year.',
+        )
+
+        self.client.login(username=self.student.email, password='testpass123')
+        response = self.client.get(reverse('organization_profile', args=[self.organization.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Helping Hands')
+        self.assertNotContains(response, 'Edit Profile')
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.utils import timezone
