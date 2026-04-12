@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.utils import timezone
 from accounts.models import User
@@ -8,6 +9,7 @@ from .forms import AchievementForm, ApplicationForm, VolunteerProfileForm, Volun
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
+User = get_user_model()
 
 
 def welcome(request):
@@ -17,7 +19,25 @@ def welcome(request):
 @login_required
 def screen1(request):
     role = request.user.user_type.title() if hasattr(request.user, 'user_type') else 'User'
-    return render(request, 'pages/screen1.html', {'role': role})
+
+    applications = [
+        {"student_name": "Alice Chen", "opportunity_title": "Food Bank", "date_applied": "Mar 10", "status": "Applied"},
+        {"student_name": "John Smith", "opportunity_title": "Tutoring", "date_applied": "Mar 11", "status": "Accepted"},
+        {"student_name": "Maria Lopez", "opportunity_title": "Park Clean", "date_applied": "Mar 12", "status": "Declined"},
+    ]
+
+    if request.method == "POST":
+        index = int(request.POST.get("index"))
+        action = request.POST.get("action")
+        if action == "accept":
+            applications[index]["status"] = "Accepted"
+        elif action == "decline":
+            applications[index]["status"] = "Declined"
+
+    return render(request, 'pages/screen1.html', {
+        'role': role,
+        'applications': applications
+    })
 
 
 @login_required
@@ -48,7 +68,7 @@ def opportunity_detail(request, opportunity_id):
     if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
         return redirect('screen1')
 
-    opportunity = get_object_or_404(Opportunity, id=opportunity_id, active=True)
+    opportunity = get_object_or_404(Opportunity, id=opportunity_id, is_active=True)
     application = Application.objects.filter(student=request.user, opportunity=opportunity).first()
 
     return render(request, 'pages/opportunity_detail.html', {
@@ -387,9 +407,10 @@ def experience_delete(request, pk):
     if request.method == 'POST':
         experience.delete()
     return redirect('volunteer_profile_edit')
+
 @login_required
 def follow_organization(request, org_id):
-    """Follow an organization. Supports both regular POST and AJAX requests."""
+    """follow an organization. Supports both regular POST and AJAX requests."""
     if request.user.user_type != 'student':
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'error': 'Only students can follow organizations'}, status=403)
