@@ -6,4 +6,3 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
-
