@@ -221,3 +221,42 @@ fieldset.form-field { border:1px solid #e5e7eb; border-radius:.6rem; padding:.75
   filter: brightness(1.03);
   transform: translateY(-1px);
 }
+
+.auth-links {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.93rem;
+}
+
+.auth-links a {
+  color: var(--auth-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.auth-links a:hover {
+  text-decoration: underline;
+}
+
+.auth-note {
+  margin-top: 1rem;
+  color: var(--auth-muted);
+  font-size: 0.82rem;
+  border-top: 1px dashed #d6deee;
+  padding-top: 0.8rem;
+}
+
+@media (max-width: 600px) {
+  .auth-card {
+    padding: 1.25rem;
+    border-radius: 12px;
+  }
+  .auth-links {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
