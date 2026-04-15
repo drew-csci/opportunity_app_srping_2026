@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+
+{% block title %}Your Opportunities - Opportunity App{% endblock %}
+
+{% block content %}
+<section class="organization-opportunities-page">
+    <div class="page-header">
+        <div>
+            <p class="eyebrow">Organization Opportunities</p>
+            <h1>Manage your posted roles</h1>
+            <p class="subtitle">Review the opportunities your organization has published and keep role details current for applicants.</p>
+        </div>
+        <a href="{% url 'organization_post_opportunity' %}" class="btn-primary-action">+ Post New Opportunity</a>
+    </div>
+
+    {% if opportunities %}
+    <div class="opportunities-list">
+        {% for opp in opportunities %}
+        <article class="opportunity-card">
+            <div class="card-header">
+                <div>
+                    <div class="title-row">
+                        <h2>{{ opp.title }}</h2>
+                        <span class="type-badge">{{ opp.get_opportunity_type_display }}</span>
+                    </div>
+                    <p class="meta-line">{{ opp.category }} | {{ opp.location }} | Posted {{ opp.posted_date|date:"M j, Y" }}</p>
+                </div>
+                <span class="status-badge {% if opp.is_active %}active{% else %}inactive{% endif %}">
+                    {% if opp.is_active %}Active{% else %}Inactive{% endif %}
+                </span>
+            </div>
+
+            <div class="detail-grid">
+                <div class="detail-card">
+                    <span class="detail-label">Duration</span>
+                    <span class="detail-value">{{ opp.get_duration_display }}</span>
+                </div>
+                <div class="detail-card">
+                    <span class="detail-label">Hours / Week</span>
+                    <span class="detail-value">{% if opp.hours_per_week %}{{ opp.hours_per_week }} hrs{% else %}Flexible{% endif %}</span>
+                </div>
+                <div class="detail-card">
+                    <span class="detail-label">Deadline</span>
+                    <span class="detail-value">{% if opp.application_deadline %}{{ opp.application_deadline|date:"M j, Y" }}{% else %}Not set{% endif %}</span>
+                </div>
+                <div class="detail-card">
+                    <span class="detail-label">Applications</span>
+                    <span class="detail-value">{{ opp.applications.count }}</span>
+                </div>
+            </div>
+
+            <div class="content-block">
+                <h3>Role Description</h3>
+                <p>{{ opp.description }}</p>
+            </div>
+
+            <div class="content-block">
+                <h3>Required Skills</h3>
+                <p>{% if opp.required_skills %}{{ opp.required_skills|linebreaksbr }}{% else %}Not specified{% endif %}</p>
+            </div>
+
+            <div class="card-actions">
+                <a href="{% url 'organization_post_opportunity' %}" class="link-action">Post Another Opportunity</a>
+                <a href="{% url 'organization_dashboard' %}" class="link-action secondary">Review Applicants</a>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <h2>No opportunities posted yet</h2>
+        <p>Create your first volunteer or internship listing to start receiving applications.</p>
+        <a href="{% url 'organization_post_opportunity' %}" class="btn-primary-action">Post Your First Opportunity</a>
+    </div>
+    {% endif %}
+</section>
+
+<style>
+.organization-opportunities-page {
+    padding: 2.5rem 0;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1.5rem;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+}
+
+.eyebrow {
+    margin: 0 0 0.35rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #0f766e;
+}
+
+.page-header h1 {
+    margin: 0;
+    font-size: 2rem;
+    color: #0f172a;
+}
+
+.subtitle {
+    margin: 0.6rem 0 0;
+    max-width: 42rem;
+    color: #475569;
+    line-height: 1.6;
+}
+
+.btn-primary-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.85rem 1.2rem;
+    border-radius: 999px;
+    background: #0f766e;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.btn-primary-action:hover {
+    background: #115e59;
+}
+
+.opportunities-list {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.opportunity-card {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid #dbe4ee;
+    border-radius: 22px;
+    padding: 1.5rem;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 1.25rem;
+}
+
+.title-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.title-row h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.35rem;
+}
+
+.type-badge,
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.type-badge {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.status-badge.active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.inactive {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.meta-line {
+    margin: 0.45rem 0 0;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.9rem;
+    margin-bottom: 1.25rem;
+}
+
+.detail-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 0.95rem 1rem;
+}
+
+.detail-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.35rem;
+}
+
+.detail-value {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.content-block + .content-block {
+    margin-top: 1rem;
+}
+
+.content-block h3 {
+    margin: 0 0 0.45rem;
+    font-size: 1rem;
+    color: #0f172a;
+}
+
+.content-block p {
+    margin: 0;
+    color: #334155;
+    line-height: 1.65;
+}
+
+.card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+}
+
+.link-action {
+    text-decoration: none;
+    font-weight: 700;
+    color: #0f766e;
+}
+
+.link-action.secondary {
+    color: #2563eb;
+}
+
+.empty-state {
+    padding: 3rem 2rem;
+    text-align: center;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid #dbe4ee;
+    border-radius: 22px;
+}
+
+.empty-icon {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+}
+
+.empty-state h2 {
+    margin: 0;
+    color: #0f172a;
+}
+
+.empty-state p {
+    margin: 0.75rem auto 1.5rem;
+    max-width: 28rem;
+    color: #475569;
+    line-height: 1.6;
+}
+
+@media (max-width: 860px) {
+    .page-header,
+    .card-header {
+        flex-direction: column;
+    }
+
+    .detail-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .organization-opportunities-page {
+        padding: 1.5rem 0;
+    }
+
+    .page-header h1 {
+        font-size: 1.65rem;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
