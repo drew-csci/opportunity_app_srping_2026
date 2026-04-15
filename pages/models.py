@@ -135,3 +135,99 @@ class OrganizationFollow(models.Model):
 
     def __str__(self):
         return f"{self.student} follows {self.organization}"
+
+
+class Message(models.Model):
+    """Model for messages sent by volunteers to organizations."""
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='sent_messages',
+        limit_choices_to={'user_type': 'student'},
+    )
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='received_messages',
+        limit_choices_to={'user_type': 'organization'},
+    )
+    subject = models.CharField(max_length=200)
+    content = models.TextField()
+    sent_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+    read_at = models.DateTimeField(null=True, blank=True)
+    reply_to = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='replies',
+        help_text="If this is a reply, reference the original message."
+    )
+
+    class Meta:
+        ordering = ['-sent_at']
+
+    def __str__(self):
+        return f"{self.sender.display_name} to {self.recipient.display_name}: {self.subject}"
+
+    @staticmethod
+    def get_unread_count(organization):
+        """Return the count of unread messages for an organization."""
+        return Message.objects.filter(recipient=organization, is_read=False).count()
+
+    def mark_as_read(self):
+        """Mark the message as read and set the read_at timestamp."""
+        if not self.is_read:
+            self.is_read = True
+            self.read_at = timezone.now()
+            self.save()
+
+    @property
+    def is_unread(self):
+        """Return True if message has not been read."""
+        return not self.is_read
+
+    @property
+    def is_reply(self):
+        """Return True if this message is a reply to another message."""
+        return self.reply_to is not None
+
+    def get_read_status(self):
+        """Return human-readable read status with timestamp if available."""
+        if self.is_read and self.read_at:
+            return f"Read on {self.read_at.strftime('%B %d, %Y at %I:%M %p')}"
+        elif self.is_read:
+            return "Read"
+        else:
+            return "Unread"
+
+    def get_conversation_thread(self):
+        """Get all messages in the conversation thread (original + replies)."""
+        if self.reply_to:
+            # If this is a reply, get the original and all its replies
+            original = self.reply_to
+            return original.get_conversation_thread()
+        else:
+            # If this is the original, get it and all replies
+            return list(self.replies.all().order_by('sent_at'))
+
+    def get_original_message(self):
+        """Get the original message in the conversation thread."""
+        if self.reply_to:
+            return self.reply_to.get_original_message()
+        return self
+
+    def has_replies(self):
+        """Return True if this message has replies."""
+        return self.replies.exists()
+
+    @classmethod
+    def get_sent_messages_by_volunteer(cls, volunteer):
+        """Get all messages sent by a volunteer, with read status."""
+        return cls.objects.filter(sender=volunteer).select_related('recipient').order_by('-sent_at')
+
+    @classmethod
+    def get_unread_sent_count(cls, volunteer):
+        """Get count of unread messages sent by a volunteer."""
+        return cls.objects.filter(sender=volunteer, is_read=False).count()
