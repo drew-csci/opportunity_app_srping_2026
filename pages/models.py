@@ -161,3 +161,8 @@ class Message(models.Model):
 
     def __str__(self):
         return f"{self.sender.display_name} to {self.recipient.display_name}: {self.subject}"
+
+    @staticmethod
+    def get_unread_count(organization):
+        """Return the count of unread messages for an organization."""
+        return Message.objects.filter(recipient=organization, is_read=False).count()

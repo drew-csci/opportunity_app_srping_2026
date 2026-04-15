@@ -206,7 +206,14 @@ def faq(request):
 
 
 def dashboard(request):
-    return render(request, 'pages/dashboard.html')
+    context = {}
+    
+    # If user is an organization, add unread message count
+    if hasattr(request.user, 'user_type') and request.user.user_type == 'organization':
+        unread_count = Message.objects.filter(recipient=request.user, is_read=False).count()
+        context['unread_message_count'] = unread_count
+    
+    return render(request, 'pages/dashboard.html', context)
 
 @login_required
 def volunteer_profile(request):
@@ -225,12 +232,16 @@ def organization_profile(request, org_id):
     """Display an organization's profile with follow/unfollow button and opportunities."""
     organization = get_object_or_404(User, id=org_id, user_type='organization')
     is_following = False
+    unread_message_count = 0
 
     if request.user.user_type == 'student':
         is_following = OrganizationFollow.objects.filter(
             student=request.user,
             organization=organization,
         ).exists()
+    elif request.user.user_type == 'organization' and request.user.id == org_id:
+        # If organization is viewing their own profile, show unread message count
+        unread_message_count = Message.objects.filter(recipient=request.user, is_read=False).count()
 
     # TODO: Query opportunities when Opportunity model is added
     opportunities = []
@@ -239,6 +250,7 @@ def organization_profile(request, org_id):
         'organization': organization,
         'is_following': is_following,
         'opportunities': opportunities,
+        'unread_message_count': unread_message_count,
     })
 
 
