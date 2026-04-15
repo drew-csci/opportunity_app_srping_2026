@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="dash-card"> // This template extends the base.html template and defines the content block to display the application form for a student to apply to a specific opportunity. It includes the opportunity title and description, as well as a form for the student to enter their application message. The form also includes buttons to save the application as a draft, submit the application, or cancel and go back to the opportunity details page.
+    <h1>{% if application.status == 'draft' %}Continue application for{% else %}Apply to{% endif %} {{ opportunity.title }}</h1> 
+    <p>{{ opportunity.description|linebreaksbr }}</p>
+
+    <form method="post">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      <div class="form-field">
+        {{ form.message.label_tag }}
+        {{ form.message }}
+        {{ form.message.errors }}
+      </div>
+
+      <div class="button-row">
+        <button type="submit" name="action" value="save_draft" class="btn">Save Draft</button>
+        <button type="submit" name="action" value="submit" class="btn btn-primary">Submit Application</button>
+        <a href="{% url 'opportunity_detail' opportunity.id %}" class="btn">Cancel</a>
+      </div>
+    </form>
+  </section>
+{% endblock %}

@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+import sys
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env')
@@ -41,17 +42,25 @@ TEMPLATES = [{
 }]
 WSGI_APPLICATION = 'opportunity_app.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME','opportunity'),
-        'USER': os.getenv('DB_USER','oppo_app'),
-        'PASSWORD': os.getenv('DB_PASSWORD','CSCI340Fall2025'),
-        'HOST': os.getenv('DB_HOST','34.16.174.60'),
-        'PORT': int(os.getenv('DB_PORT','5432')),
-        'CONN_MAX_AGE': 60,
+if 'test' in sys.argv:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': str(BASE_DIR / 'test_db.sqlite3'),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME', 'opportunity'),
+            'USER': os.getenv('DB_USER', 'oppo_app'),
+            'PASSWORD': os.getenv('DB_PASSWORD', 'CSCI340Fall2025'),
+            'HOST': os.getenv('DB_HOST', '34.16.174.60'),
+            'PORT': int(os.getenv('DB_PORT', '5432')),
+            'CONN_MAX_AGE': 60,
+        }
+    }
 
 AUTH_USER_MODEL = 'accounts.User'
 
