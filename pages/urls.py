@@ -29,5 +29,7 @@ urlpatterns = [
     path('following/', views.followed_organizations, name='followed_organizations'),
     path('organization/inbox/', views.organization_inbox, name='organization_inbox'),
     path('messages/<int:message_id>/', views.message_detail, name='message_detail'),
+    path('volunteer/sent-messages/', views.volunteer_sent_messages, name='volunteer_sent_messages'),
+    path('volunteer/sent-messages/<int:message_id>/', views.volunteer_sent_message_detail, name='volunteer_sent_message_detail'),
 ]
 

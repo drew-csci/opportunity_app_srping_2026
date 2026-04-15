@@ -155,6 +155,7 @@ class Message(models.Model):
     content = models.TextField()
     sent_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
+    read_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ['-sent_at']
@@ -166,3 +167,34 @@ class Message(models.Model):
     def get_unread_count(organization):
         """Return the count of unread messages for an organization."""
         return Message.objects.filter(recipient=organization, is_read=False).count()
+
+    def mark_as_read(self):
+        """Mark the message as read and set the read_at timestamp."""
+        if not self.is_read:
+            self.is_read = True
+            self.read_at = timezone.now()
+            self.save()
+
+    @property
+    def is_unread(self):
+        """Return True if message has not been read."""
+        return not self.is_read
+
+    def get_read_status(self):
+        """Return human-readable read status with timestamp if available."""
+        if self.is_read and self.read_at:
+            return f"Read on {self.read_at.strftime('%B %d, %Y at %I:%M %p')}"
+        elif self.is_read:
+            return "Read"
+        else:
+            return "Unread"
+
+    @classmethod
+    def get_sent_messages_by_volunteer(cls, volunteer):
+        """Get all messages sent by a volunteer, with read status."""
+        return cls.objects.filter(sender=volunteer).select_related('recipient').order_by('-sent_at')
+
+    @classmethod
+    def get_unread_sent_count(cls, volunteer):
+        """Get count of unread messages sent by a volunteer."""
+        return cls.objects.filter(sender=volunteer, is_read=False).count()

@@ -401,17 +401,42 @@ def organization_inbox(request):
 
 @login_required
 def message_detail(request, message_id):
-    """Display a specific message and mark it as read."""
+    """Display a specific message and mark it as read with read receipt."""
     if not hasattr(request.user, 'user_type') or request.user.user_type != 'organization':
         return redirect('screen1')
 
     message = get_object_or_404(Message, id=message_id, recipient=request.user)
     
-    # Mark message as read
-    if not message.is_read:
-        message.is_read = True
-        message.save()
+    # Mark message as read (using the model method that sets read_at timestamp)
+    message.mark_as_read()
 
     return render(request, 'pages/message_detail.html', {
+        'message': message,
+    })
+
+
+@login_required
+def volunteer_sent_messages(request):
+    """Display all messages sent by a volunteer (student) with read receipt status."""
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
+        return redirect('screen1')
+
+    # Get all messages sent by this student, ordered by most recent first
+    sent_messages = Message.objects.filter(sender=request.user).select_related('recipient').order_by('-sent_at')
+
+    return render(request, 'pages/volunteer_sent_messages.html', {
+        'messages': sent_messages,
+    })
+
+
+@login_required
+def volunteer_sent_message_detail(request, message_id):
+    """Display a sent message with read receipt information for a volunteer."""
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
+        return redirect('screen1')
+
+    message = get_object_or_404(Message, id=message_id, sender=request.user)
+
+    return render(request, 'pages/volunteer_sent_message_detail.html', {
         'message': message,
     })
