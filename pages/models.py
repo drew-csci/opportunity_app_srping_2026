@@ -156,6 +156,14 @@ class Message(models.Model):
     sent_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
     read_at = models.DateTimeField(null=True, blank=True)
+    reply_to = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='replies',
+        help_text="If this is a reply, reference the original message."
+    )
 
     class Meta:
         ordering = ['-sent_at']
@@ -180,6 +188,11 @@ class Message(models.Model):
         """Return True if message has not been read."""
         return not self.is_read
 
+    @property
+    def is_reply(self):
+        """Return True if this message is a reply to another message."""
+        return self.reply_to is not None
+
     def get_read_status(self):
         """Return human-readable read status with timestamp if available."""
         if self.is_read and self.read_at:
@@ -188,6 +201,26 @@ class Message(models.Model):
             return "Read"
         else:
             return "Unread"
+
+    def get_conversation_thread(self):
+        """Get all messages in the conversation thread (original + replies)."""
+        if self.reply_to:
+            # If this is a reply, get the original and all its replies
+            original = self.reply_to
+            return original.get_conversation_thread()
+        else:
+            # If this is the original, get it and all replies
+            return list(self.replies.all().order_by('sent_at'))
+
+    def get_original_message(self):
+        """Get the original message in the conversation thread."""
+        if self.reply_to:
+            return self.reply_to.get_original_message()
+        return self
+
+    def has_replies(self):
+        """Return True if this message has replies."""
+        return self.replies.exists()
 
     @classmethod
     def get_sent_messages_by_volunteer(cls, volunteer):

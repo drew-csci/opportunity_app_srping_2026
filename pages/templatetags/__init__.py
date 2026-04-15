@@ -119,3 +119,59 @@ def read_status_icon(message):
         return '✓ Read'
     else:
         return '✗ Unread'
+
+
+@register.simple_tag
+def reply_count(message):
+    """
+    Get the count of replies to a message.
+    
+    Usage in template: {% reply_count message %}
+    """
+    if message.has_replies():
+        return message.replies.count()
+    return 0
+
+
+@register.filter
+def is_reply_to(message, thread_message):
+    """
+    Check if a message is a reply to another message.
+    
+    Usage in template: {% if message|is_reply_to:original %}
+    """
+    return message.reply_to == thread_message
+
+
+@register.inclusion_tag('components/reply_count_badge.html')
+def reply_count_badge(message):
+    """
+    Render a badge showing the count of replies to a message.
+    
+    Usage in template: {% reply_count_badge message %}
+    """
+    count = message.replies.count()
+    return {
+        'count': count,
+        'has_replies': count > 0,
+    }
+
+
+@register.filter
+def get_reply_to_message(message):
+    """
+    Get the original message if this is a reply.
+    
+    Usage in template: {% if message.reply_to %}{{ message|get_reply_to_message }}{% endif %}
+    """
+    return message.reply_to
+
+
+@register.simple_tag
+def character_count_display(text):
+    """
+    Get the character count for display.
+    
+    Usage in template: {% character_count_display message.content %}
+    """
+    return len(text)

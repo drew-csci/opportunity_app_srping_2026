@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.utils import timezone
 from .models import Achievement, Opportunity, Application, VolunteerProfile, VolunteerExperience, OrganizationFollow, Message
-from .forms import AchievementForm, ApplicationForm, VolunteerProfileForm, VolunteerExperienceForm
+from .forms import AchievementForm, ApplicationForm, VolunteerProfileForm, VolunteerExperienceForm, MessageReplyForm
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
@@ -401,7 +401,7 @@ def organization_inbox(request):
 
 @login_required
 def message_detail(request, message_id):
-    """Display a specific message and mark it as read with read receipt."""
+    """Display a specific message and handle replies with character limit validation."""
     if not hasattr(request.user, 'user_type') or request.user.user_type != 'organization':
         return redirect('screen1')
 
@@ -409,9 +409,39 @@ def message_detail(request, message_id):
     
     # Mark message as read (using the model method that sets read_at timestamp)
     message.mark_as_read()
+    
+    # Get all replies to this message
+    replies = message.replies.all().select_related('sender', 'recipient').order_by('sent_at')
+    
+    # Handle reply submission
+    if request.method == 'POST':
+        form = MessageReplyForm(request.POST)
+        if form.is_valid():
+            try:
+                # Create a new reply message
+                reply = Message.objects.create(
+                    sender=request.user,  # Organization is sending the reply
+                    recipient=message.sender,  # Reply goes back to the volunteer
+                    subject=f"Re: {message.subject}",
+                    content=form.cleaned_data['reply_content'],
+                    reply_to=message,  # Link to the original message
+                )
+                messages.success(request, 'Your reply has been sent successfully!')
+                return redirect('message_detail', message_id=message_id)
+            except Exception as e:
+                messages.error(request, f'There was an error sending your reply: {str(e)}')
+        else:
+            # Display form errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, str(error))
+    else:
+        form = MessageReplyForm()
 
     return render(request, 'pages/message_detail.html', {
         'message': message,
+        'replies': replies,
+        'form': form,
     })
 
 
@@ -431,12 +461,16 @@ def volunteer_sent_messages(request):
 
 @login_required
 def volunteer_sent_message_detail(request, message_id):
-    """Display a sent message with read receipt information for a volunteer."""
+    """Display a sent message with read receipt information and any replies for a volunteer."""
     if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
         return redirect('screen1')
 
     message = get_object_or_404(Message, id=message_id, sender=request.user)
+    
+    # Get all replies to this message
+    replies = message.replies.all().select_related('sender', 'recipient').order_by('sent_at')
 
     return render(request, 'pages/volunteer_sent_message_detail.html', {
         'message': message,
+        'replies': replies,
     })

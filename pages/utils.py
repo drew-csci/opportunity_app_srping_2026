@@ -85,3 +85,59 @@ def get_sent_message_details(message):
         'sent_at': message.sent_at,
         'recipient_name': message.recipient.display_name,
     }
+
+
+def get_message_conversations(organization):
+    """
+    Get all unique conversation threads for an organization.
+    
+    Args:
+        organization: The organization User object
+        
+    Returns:
+        list: List of original messages (not replies) with conversation info
+    """
+    # Get only original messages (where reply_to is None)
+    original_messages = Message.objects.filter(
+        recipient=organization,
+        reply_to__isnull=True
+    ).select_related('sender').order_by('-sent_at')
+    
+    conversations = []
+    for msg in original_messages:
+        reply_count = msg.replies.count()
+        conversations.append({
+            'original_message': msg,
+            'reply_count': reply_count,
+            'has_replies': reply_count > 0,
+            'latest_reply': msg.replies.order_by('-sent_at').first(),
+        })
+    
+    return conversations
+
+
+def validate_reply_content(content):
+    """
+    Validate reply content for length and emptiness.
+    
+    Args:
+        content: The reply text
+        
+    Returns:
+        tuple: (is_valid, error_message)
+    """
+    max_length = 1000
+    content = content.strip()
+    
+    if not content:
+        return False, "Your reply cannot be blank. Please enter a message."
+    
+    if len(content) > max_length:
+        overage = len(content) - max_length
+        return (
+            False,
+            f"Your reply exceeds the {max_length} character limit by {overage} characters. "
+            f"Please remove {overage} characters and try again."
+        )
+    
+    return True, None
