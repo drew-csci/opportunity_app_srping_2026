@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.utils import timezone
-from .models import Achievement, Opportunity, Application, VolunteerProfile, VolunteerExperience, OrganizationFollow
+from .models import Achievement, Opportunity, Application, VolunteerProfile, VolunteerExperience, OrganizationFollow, Message
 from .forms import AchievementForm, ApplicationForm, VolunteerProfileForm, VolunteerExperienceForm
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
@@ -370,4 +370,36 @@ def followed_organizations(request):
 
     return render(request, 'pages/followed_organizations.html', {
         'follows': follows,
+    })
+
+
+@login_required
+def organization_inbox(request):
+    """Display inbox for organizations to see messages from volunteers, sorted by most recent."""
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'organization':
+        return redirect('screen1')
+
+    # Get all messages received by this organization, ordered by most recent first
+    inbox_messages = Message.objects.filter(recipient=request.user).select_related('sender').order_by('-sent_at')
+
+    return render(request, 'pages/organization_inbox.html', {
+        'messages': inbox_messages,
+    })
+
+
+@login_required
+def message_detail(request, message_id):
+    """Display a specific message and mark it as read."""
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'organization':
+        return redirect('screen1')
+
+    message = get_object_or_404(Message, id=message_id, recipient=request.user)
+    
+    # Mark message as read
+    if not message.is_read:
+        message.is_read = True
+        message.save()
+
+    return render(request, 'pages/message_detail.html', {
+        'message': message,
     })

@@ -135,3 +135,29 @@ class OrganizationFollow(models.Model):
 
     def __str__(self):
         return f"{self.student} follows {self.organization}"
+
+
+class Message(models.Model):
+    """Model for messages sent by volunteers to organizations."""
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='sent_messages',
+        limit_choices_to={'user_type': 'student'},
+    )
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='received_messages',
+        limit_choices_to={'user_type': 'organization'},
+    )
+    subject = models.CharField(max_length=200)
+    content = models.TextField()
+    sent_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-sent_at']
+
+    def __str__(self):
+        return f"{self.sender.display_name} to {self.recipient.display_name}: {self.subject}"
