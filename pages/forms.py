@@ -1,5 +1,8 @@
 from django import forms
 from .models import Achievement, StudentOpportunity, VolunteerProfile, VolunteerExperience
+from .models import Achievement, Application
+from .models import VolunteerProfile, VolunteerExperience
+
 
 class AchievementForm(forms.ModelForm):
     class Meta:
@@ -49,6 +52,18 @@ class DenyOpportunityForm(forms.Form):
         max_length=1000,
         help_text='This feedback will be sent to the student.'
     )
+class ApplicationForm(forms.ModelForm):
+    class Meta:
+        model = Application
+        fields = ['message']
+        labels = {
+            'message': 'Application details',
+        }
+        widgets = {
+            'message': forms.Textarea(attrs={'rows': 6}),
+        }
+
+
 class VolunteerProfileForm(forms.Form):
     first_name = forms.CharField(max_length=150, label="First name")
     last_name = forms.CharField(max_length=150, label="Last name")

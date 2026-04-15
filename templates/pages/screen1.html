@@ -4,11 +4,11 @@
     <h1>Screen 1 {{ role }}</h1>
     <p class="muted">Hello {{ request.user.display_name }} ({{ role }})</p>
 
-    {% if request.user.user_type == 'student' %}
+    {% if role == 'Student' %}
       {% include "pages/partials/s1_student.html" %}
-    {% elif request.user.user_type == 'organization' %}
+    {% elif role == 'Organization' %}
       {% include "pages/partials/s1_organization.html" %}
-    {% elif request.user.user_type == 'administrator' %}
+    {% elif role == 'Administrator' %}
       {% include "pages/partials/s1_administrator.html" %}
     {% else %}
       <p>No role specific content yet.</p>
