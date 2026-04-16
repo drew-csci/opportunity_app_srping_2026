@@ -8,6 +8,9 @@
 
       <form method="post" novalidate>
         {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div class="error">{{ form.non_field_errors.0 }}</div>
+        {% endif %}
         <div class="form-field">
           <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
           {{ form.username }}
@@ -22,10 +25,10 @@
       </form>
 
       <div class="auth-links">
+        <a href="{% url 'password_reset' %}">Forgot password?</a>
         <a href="{% url 'register' %}{% if selected_user_type %}?type={{ selected_user_type }}{% endif %}">Create account</a>
-        <a href="#">Forgot password?</a>
       </div>
-
+      
       <p class="auth-note">Secure sign-in with role-based access for students, organizations, and administrators.</p>
     </section>
   </section>
