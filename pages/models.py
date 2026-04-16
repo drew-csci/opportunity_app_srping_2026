@@ -17,36 +17,14 @@ class Achievement(models.Model):
         return self.title
 
 
-class Opportunity(models.Model):
-    """Represents an opportunity (volunteer, internship, work, etc.) that can be posted by organizations."""
-    
-    class OpportunityStatus(models.TextChoices):
-        OPEN = 'open', 'Open'
-        CLOSED = 'closed', 'Closed'
-    
-    title = models.CharField(max_length=200)
-    description = models.TextField()
-    organization = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='posted_opportunities',
-        limit_choices_to={'user_type': 'organization'},
-    )
-    status = models.CharField(
-        max_length=20,
-        choices=OpportunityStatus.choices,
-        default=OpportunityStatus.OPEN
-    )
-    date_posted = models.DateTimeField(auto_now_add=True)
-    date_updated = models.DateTimeField(auto_now=True)
-class Opportunity(models.Model): # New model for volunteer opportunities
+class Opportunity(models.Model): # Model for volunteer opportunities
     organization = models.ForeignKey(  # Foreign key to the User model to link each opportunity to a specific organization
-        settings.AUTH_USER_MODEL, 
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE, # Delete all related opportunities if the organization is deleted
         related_name='opportunities', # Allow reverse access to opportunities from the organization user model
         limit_choices_to={'user_type': 'organization'} # Limit the choices in the admin interface to only users with user_type 'organization'
     )
-    title = models.CharField(max_length=200) 
+    title = models.CharField(max_length=200)
     description = models.TextField()
     cause = models.CharField(max_length=200)
     location = models.CharField(max_length=200)
@@ -62,19 +40,16 @@ class Opportunity(models.Model): # New model for volunteer opportunities
     def __str__(self):
         return self.title
 
-    class Meta:
-        ordering = ['-date_posted']
-
 
 class StudentOpportunity(models.Model):
     """Tracks the relationship between a student and an opportunity, including completion status."""
-    
+
     class CompletionStatus(models.TextChoices):
         NOT_STARTED = 'not_started', 'Not Started'
         IN_PROGRESS = 'in_progress', 'In Progress'
         PENDING = 'pending', 'Pending Approval'
         COMPLETED = 'completed', 'Completed'
-    
+
     student = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -106,11 +81,11 @@ class StudentOpportunity(models.Model):
 
 class Notification(models.Model):
     """Tracks notifications sent to users about opportunity status changes."""
-    
+
     class NotificationType(models.TextChoices):
         COMPLETION_DENIED = 'completion_denied', 'Completion Denied'
         COMPLETION_APPROVED = 'completion_approved', 'Completion Approved'
-    
+
     recipient = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -134,7 +109,6 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"Notification to {self.recipient.email} - {self.notification_type}"
-
 
 
 class Application(models.Model): # New model for student applications to volunteer opportunities
@@ -168,13 +142,13 @@ class Application(models.Model): # New model for student applications to volunte
         ordering = ['-applied_date']
 
     def save(self, *args, **kwargs): # Automatically set the responded_date when the status changes to accepted or denied
-        if self.status in (self.Status.ACCEPTED, self.Status.DENIED) and self.responded_date is None:  
+        if self.status in (self.Status.ACCEPTED, self.Status.DENIED) and self.responded_date is None:
             self.responded_date = timezone.now()
         super().save(*args, **kwargs) # Call the original save method to save the instance
 
     def __str__(self): # Return a string representation of the application showing the student's name, opportunity title, and current status
         return f'{self.student.display_name} — {self.opportunity.title} ({self.get_status_display()})'
-    
+
 class VolunteerProfile(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -210,7 +184,7 @@ class VolunteerExperience(models.Model):
 
     def __str__(self):
         return f"{self.role} at {self.organization_name}"
-    
+
 class OrganizationProfile(models.Model):
     organization = models.OneToOneField(
         settings.AUTH_USER_MODEL,
