@@ -1,7 +1,7 @@
 from django import forms
 from .models import Achievement, StudentOpportunity, VolunteerProfile, VolunteerExperience
 from .models import Achievement, Application
-from .models import VolunteerProfile, VolunteerExperience
+from .models import VolunteerProfile, VolunteerExperience, OrganizationProfile, OrganizationImpactMetric
 
 
 class AchievementForm(forms.ModelForm):
@@ -96,5 +96,24 @@ class VolunteerExperienceForm(forms.ModelForm):
         widgets = {
             'start_date': forms.DateInput(attrs={'type': 'date'}),
             'end_date': forms.DateInput(attrs={'type': 'date'}),
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+
+class OrganizationProfileForm(forms.ModelForm):
+    class Meta:
+        model = OrganizationProfile
+        fields = ['organization_name', 'mission', 'location', 'contact_info']
+        widgets = {
+            'mission': forms.Textarea(attrs={'rows': 4}),
+            'contact_info': forms.Textarea(attrs={'rows': 3}),
+        }
+
+
+class OrganizationImpactMetricForm(forms.ModelForm):
+    class Meta:
+        model = OrganizationImpactMetric
+        fields = ['title', 'value', 'description']
+        widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
         }

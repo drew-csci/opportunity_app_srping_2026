@@ -2,7 +2,7 @@
 body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#f7f7fb; color:#111; }
 .container { max-width: 960px; margin: 0 auto; padding: 1.25rem; }
 .site-header { background:#fff; border-bottom:1px solid #e5e7eb; position: sticky; top:0; }
-.header-inner { display:flex; align-items:center; justify-content:space-between; }
+.header-inner { display:flex; align-items:center; justify-content:space-between; padding:.75rem 1.25rem; }
 .brand { font-weight:700; text-decoration:none; color:#111; }
 .nav { list-style:none; display:flex; gap:.75rem; margin:0; padding:0; align-items:center; }
 .nav .divider { width:1px; background:#e5e7eb; height:22px; margin:0 .5rem; }
