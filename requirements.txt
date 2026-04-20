@@ -3,3 +3,4 @@ Django==5.2.12
 psycopg2-binary==2.9.11
 python-dotenv==1.2.2
 sqlparse==0.5.5
+coverage==7.6.1

@@ -38,6 +38,35 @@ class VolunteerProfileTests(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn('email', form.errors)
 
+    def test_volunteer_profile_form_invalid_phone_too_long(self):
+        form = VolunteerProfileForm(data={
+            'first_name': 'Jane',
+            'last_name': 'Doe',
+            'email': 'jane.doe@example.com',
+            'phone': '1' * 25,
+            'bio': 'Experienced volunteer',
+            'skills': 'Tutoring',
+        })
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('phone', form.errors)
+        self.assertIn('Ensure this value has at most', form.errors['phone'][0])
+
+    def test_volunteer_profile_form_missing_required_fields(self):
+        form = VolunteerProfileForm(data={
+            'first_name': '',
+            'last_name': '',
+            'email': '',
+            'phone': '',
+            'bio': '',
+            'skills': '',
+        })
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('first_name', form.errors)
+        self.assertIn('last_name', form.errors)
+        self.assertIn('email', form.errors)
+
     def test_volunteer_profile_edit_and_experience_workflow_persists_after_logout(self):
         User = get_user_model()
         user = User.objects.create_user(
@@ -231,6 +260,42 @@ class ApplicationTrackingTests(TestCase): #$ Test case class for testing the app
         self.assertEqual(draft_application.status, Application.Status.DRAFT)
         self.assertRedirects(response, reverse('application_detail', args=[draft_application.id]))
 
+    def test_apply_to_opportunity_empty_message_returns_form_error(self):
+        self.client.force_login(self.student)
+        response = self.client.post(
+            reverse('apply_to_opportunity', args=[self.opportunity.id]),
+            {'message': '', 'action': 'submit'}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'This field is required.')
+
+        application = Application.objects.get(student=self.student, opportunity=self.opportunity)
+        self.assertEqual(application.status, Application.Status.DRAFT)
+
+    def test_apply_to_opportunity_nonexistent_opportunity_returns_404(self):
+        self.client.force_login(self.student)
+        response = self.client.get(reverse('apply_to_opportunity', args=[999999]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_experience_add_invalid_data_does_not_save(self):
+        self.client.force_login(self.student)
+        response = self.client.post(
+            reverse('experience_add'),
+            {
+                'organization_name': '',
+                'role': '',
+                'description': 'No role or organization',
+                'start_date': 'not-a-date',
+                'end_date': '',
+                'is_current': 'on',
+            }
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['form'].errors)
+        self.assertEqual(VolunteerExperience.objects.filter(volunteer=self.student).count(), 0)
+
     def test_prevent_duplicate_apply_for_non_draft(self):
         existing = Application.objects.create(
             student=self.student,
@@ -332,6 +397,114 @@ class ApplicationTrackingTests(TestCase): #$ Test case class for testing the app
         self.assertEqual(app.status, Application.Status.PENDING)
         self.assertEqual(app.message, 'Final submission')
         self.assertContains(response, 'Application submitted')
+
+
+class RegressionTests(TestCase):
+    """Regression tests for core student and organization workflows."""
+
+    def setUp(self):
+        self.student = User.objects.create_user(
+            username='student_reg',
+            email='student_reg@drew.edu',
+            password='TestPass123!',
+            user_type='student',
+            first_name='Student',
+            last_name='Regression',
+        )
+        self.organization = User.objects.create_user(
+            username='org_reg',
+            email='org_reg@drew.edu',
+            password='TestPass123!',
+            user_type='organization',
+            first_name='Org',
+            last_name='Regression',
+        )
+        self.opportunity = Opportunity.objects.create(
+            organization=self.organization,
+            title='Regression Opportunity',
+            description='Regression test opportunity',
+            cause='Community',
+            location='Online',
+            duration='2 weeks',
+            skills_required='Communication',
+            opportunity_type='Volunteer',
+            is_active=True,
+        )
+
+    def test_student_application_and_organization_review_workflow(self):
+        self.client.force_login(self.student)
+        response = self.client.post(
+            reverse('apply_to_opportunity', args=[self.opportunity.id]),
+            {'message': 'I want to help', 'action': 'submit'},
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Application submitted')
+
+        application = Application.objects.get(student=self.student, opportunity=self.opportunity)
+        self.assertEqual(application.status, Application.Status.PENDING)
+
+        self.client.logout()
+        self.client.force_login(self.organization)
+        review_response = self.client.post(
+            reverse('review_application', args=[application.id]),
+            {'decision': Application.Status.ACCEPTED},
+            follow=True,
+        )
+
+        self.assertEqual(review_response.status_code, 200)
+        self.assertContains(review_response, 'Application status updated to Accepted.')
+
+        application.refresh_from_db()
+        self.assertEqual(application.status, Application.Status.ACCEPTED)
+        self.assertIsNotNone(application.responded_date)
+
+    def test_student_profile_and_experience_crud_regression(self):
+        self.client.force_login(self.student)
+
+        response = self.client.post(
+            reverse('volunteer_profile_edit'),
+            {
+                'first_name': 'Reg',
+                'last_name': 'Student',
+                'email': 'reg.student@example.com',
+                'phone': '555-0000',
+                'bio': 'Regression tester',
+                'skills': 'Testing, Writing',
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'My Profile')
+        self.student.refresh_from_db()
+        self.assertEqual(self.student.email, 'reg.student@example.com')
+
+        response = self.client.post(
+            reverse('experience_add'),
+            {
+                'organization_name': 'Test Org',
+                'role': 'Volunteer',
+                'description': 'Regression experience',
+                'start_date': datetime.date.today().strftime('%Y-%m-%d'),
+                'end_date': '',
+                'is_current': 'on',
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        experience = VolunteerExperience.objects.filter(volunteer=self.student).first()
+        self.assertIsNotNone(experience)
+        self.assertEqual(experience.role, 'Volunteer')
+
+        delete_response = self.client.post(
+            reverse('experience_delete', args=[experience.pk]),
+            follow=True,
+        )
+        self.assertEqual(delete_response.status_code, 200)
+        self.assertFalse(VolunteerExperience.objects.filter(volunteer=self.student).exists())
 
 
 class OrganizationFollowModelTests(TestCase):

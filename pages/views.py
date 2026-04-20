@@ -26,12 +26,20 @@ def screen1(request):
     ]
 
     if request.method == "POST":
-        index = int(request.POST.get("index"))
-        action = request.POST.get("action")
-        if action == "accept":
-            applications[index]["status"] = "Accepted"
-        elif action == "decline":
-            applications[index]["status"] = "Declined"
+        try:
+            index_val = request.POST.get("index")
+            if index_val is not None:
+                index = int(index_val)
+                action = request.POST.get("action")
+                
+                # Input boundary validation
+                if 0 <= index < len(applications):
+                    if action == "accept":
+                        applications[index]["status"] = "Accepted"
+                    elif action == "decline":
+                        applications[index]["status"] = "Declined"
+        except ValueError:
+            pass # Ignore malformed index gracefully
 
     return render(request, 'pages/screen1.html', {
         'role': role,
