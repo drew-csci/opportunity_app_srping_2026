@@ -1885,3 +1885,4 @@ class OpportunityListingTest(TestCase):
         
         self.assertEqual(student_opp.status, 'pending')
 
+
