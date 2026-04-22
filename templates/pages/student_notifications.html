@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row mb-4">
+    <div class="col-md-12">
+      <h1>My Notifications</h1>
+      <p class="text-muted">Updates on your opportunity completions.</p>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-12">
+      {% if notifications %}
+        {% for notification in notifications %}
+          <div class="card mb-3 {% if not notification.is_read %}border-info{% else %}border-light{% endif %}">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  {% if notification.notification_type == 'completion_approved' %}
+                    <span class="badge bg-success">Approved</span>
+                  {% elif notification.notification_type == 'completion_denied' %}
+                    <span class="badge bg-danger">Denied</span>
+                  {% endif %}
+                  {% if not notification.is_read %}
+                    <span class="badge bg-info">New</span>
+                  {% endif %}
+                </div>
+                <small class="text-muted">{{ notification.created_at|date:"F d, Y g:i A" }}</small>
+              </div>
+              
+              <h5 class="card-title mt-2">{{ notification.student_opportunity.opportunity.title }}</h5>
+              
+              <p class="card-text">
+                {{ notification.message|linebreaks }}
+              </p>
+              
+              <small class="text-muted">
+                Organization: {{ notification.student_opportunity.opportunity.organization.display_name }}
+              </small>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="alert alert-info" role="alert">
+          <strong>No notifications yet.</strong> You'll be notified here when your opportunity completions are reviewed.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="row mt-4">
+    <div class="col-md-12">
+      <a href="{% url 'student_dashboard' %}" class="btn btn-primary">← Back to Dashboard</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
