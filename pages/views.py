@@ -7,12 +7,12 @@ from django.views.decorators.http import require_http_methods
 from accounts.models import User
 
 from .models import Achievement, StudentOpportunity, Opportunity, OrganizationFollow, Notification, VolunteerProfile, VolunteerExperience
-from .forms import AchievementForm, MarkOpportunityPendingForm, DenyOpportunityForm, VolunteerProfileForm, VolunteerExperienceForm
+from .forms import AchievementForm, MarkOpportunityPendingForm, DenyOpportunityForm, VolunteerProfileForm, VolunteerExperienceForm, OpportunityForm
 from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.utils import timezone
 from .models import Achievement, Opportunity, Application, VolunteerProfile, VolunteerExperience, OrganizationFollow
-from .forms import AchievementForm, ApplicationForm, VolunteerProfileForm, VolunteerExperienceForm
+from .forms import AchievementForm, ApplicationForm, VolunteerProfileForm, VolunteerExperienceForm, OpportunityForm
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
@@ -315,13 +315,23 @@ def organization_profile(request, org_id):
             organization=organization,
         ).exists()
 
-    # TODO: Query opportunities when Opportunity model is added
-    opportunities = []
+    # Get current/open opportunities
+    current_opportunities = Opportunity.objects.filter(
+        organization=organization,
+        status='open'
+    ).order_by('-date_posted')
+    
+    # Get past/closed opportunities
+    past_opportunities = Opportunity.objects.filter(
+        organization=organization,
+        status='closed'
+    ).order_by('-date_posted')
 
     return render(request, 'pages/organization_profile.html', {
         'organization': organization,
         'is_following': is_following,
-        'opportunities': opportunities,
+        'current_opportunities': current_opportunities,
+        'past_opportunities': past_opportunities,
     })
 
 
@@ -378,6 +388,95 @@ def organization_dashboard(request):
     }
 
     return render(request, 'pages/organization_dashboard.html', context)
+
+
+@login_required
+def organization_opportunities(request):
+    """
+    List of opportunities posted by the logged-in organization.
+    Only accessible to users with 'organization' user type.
+    """
+    # Verify the user is an organization
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'organization':
+        return redirect('screen1')
+    
+    # Get all opportunities posted by this organization
+    opportunities = Opportunity.objects.filter(
+        organization=request.user
+    ).order_by('-date_posted')
+    
+    context = {
+        'opportunities': opportunities,
+    }
+    
+    return render(request, 'pages/organization_opportunities.html', context)
+
+
+
+@login_required
+def edit_opportunity(request, opportunity_id):
+    """
+    Edit an existing opportunity.
+    Only the organization that posted the opportunity can edit it.
+    GET: Display the edit form with current opportunity data
+    POST: Save the edited opportunity
+    """
+    # Verify the user is an organization
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'organization':
+        return HttpResponseForbidden("Only organizations can edit opportunities.")
+    
+    # Get the opportunity
+    opportunity = get_object_or_404(Opportunity, id=opportunity_id)
+    
+    # Verify this organization posted the opportunity
+    if opportunity.organization != request.user:
+        return HttpResponseForbidden("You can only edit opportunities you posted.")
+    
+    if request.method == 'POST':
+        form = OpportunityForm(request.POST, instance=opportunity)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Opportunity "{opportunity.title}" has been updated successfully.')
+            return redirect('organization_opportunities')
+        else:
+            messages.error(request, 'Please correct the highlighted fields and try again.')
+    else:
+        form = OpportunityForm(instance=opportunity)
+    
+    return render(request, 'pages/edit_opportunity.html', {
+        'form': form,
+        'opportunity': opportunity,
+    })
+
+
+@login_required
+def delete_opportunity(request, opportunity_id):
+    """
+    Delete an opportunity.
+    Only the organization that posted the opportunity can delete it.
+    GET: Display deletion confirmation page
+    POST: Actually delete the opportunity
+    """
+    # Verify the user is an organization
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'organization':
+        return HttpResponseForbidden("Only organizations can delete opportunities.")
+    
+    # Get the opportunity
+    opportunity = get_object_or_404(Opportunity, id=opportunity_id)
+    
+    # Verify this organization posted the opportunity
+    if opportunity.organization != request.user:
+        return HttpResponseForbidden("You can only delete opportunities you posted.")
+    
+    if request.method == 'POST':
+        opportunity_title = opportunity.title
+        opportunity.delete()
+        messages.success(request, f'Opportunity "{opportunity_title}" has been deleted.')
+        return redirect('organization_opportunities')
+    
+    return render(request, 'pages/delete_opportunity.html', {
+        'opportunity': opportunity,
+    })
 
 
 @login_required
