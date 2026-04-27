@@ -18,35 +18,13 @@ class Achievement(models.Model):
 
 
 class Opportunity(models.Model):
-    """Represents an opportunity (volunteer, internship, work, etc.) that can be posted by organizations."""
-    
-    class OpportunityStatus(models.TextChoices):
-        OPEN = 'open', 'Open'
-        CLOSED = 'closed', 'Closed'
-    
-    title = models.CharField(max_length=200)
-    description = models.TextField()
     organization = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='posted_opportunities',
-        limit_choices_to={'user_type': 'organization'},
+        related_name='opportunities',
+        limit_choices_to={'user_type': 'organization'}
     )
-    status = models.CharField(
-        max_length=20,
-        choices=OpportunityStatus.choices,
-        default=OpportunityStatus.OPEN
-    )
-    date_posted = models.DateTimeField(auto_now_add=True)
-    date_updated = models.DateTimeField(auto_now=True)
-class Opportunity(models.Model): # New model for volunteer opportunities
-    organization = models.ForeignKey(  # Foreign key to the User model to link each opportunity to a specific organization
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.CASCADE, # Delete all related opportunities if the organization is deleted
-        related_name='opportunities', # Allow reverse access to opportunities from the organization user model
-        limit_choices_to={'user_type': 'organization'} # Limit the choices in the admin interface to only users with user_type 'organization'
-    )
-    title = models.CharField(max_length=200) 
+    title = models.CharField(max_length=200)
     description = models.TextField()
     cause = models.CharField(max_length=200)
     location = models.CharField(max_length=200)
@@ -61,9 +39,6 @@ class Opportunity(models.Model): # New model for volunteer opportunities
 
     def __str__(self):
         return self.title
-
-    class Meta:
-        ordering = ['-date_posted']
 
 
 class StudentOpportunity(models.Model):
