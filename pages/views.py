@@ -431,6 +431,56 @@ def current_volunteers_list(request):
 
 
 @login_required
+def mark_volunteer_completed(request, application_id):
+    """
+    Mark a volunteer's application as completed and add to their experience.
+    Creates a VolunteerExperience record for the volunteer.
+    Only accessible to the organization that posted the opportunity.
+    """
+    # Verify user is organization
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'organization':
+        return HttpResponseForbidden("Only organizations can mark volunteers as completed.")
+    
+    # Get the application
+    application = get_object_or_404(
+        Application,
+        id=application_id,
+        opportunity__organization=request.user,
+        status=Application.Status.ACCEPTED
+    )
+    
+    if request.method == 'POST':
+        try:
+            # Create VolunteerExperience record
+            VolunteerExperience.objects.create(
+                volunteer=application.student,
+                organization_name=request.user.display_name or request.user.email,
+                role=application.opportunity.title,
+                description=application.opportunity.description,
+                start_date=application.responded_date.date() if application.responded_date else timezone.now().date(),
+                end_date=timezone.now().date(),
+                is_current=False,
+            )
+            
+            messages.success(
+                request,
+                f'{application.student.display_name} has been marked as completed and experience added to their profile.'
+            )
+        except Exception as e:
+            messages.error(
+                request,
+                f'Error marking volunteer as completed: {str(e)}'
+            )
+        
+        return redirect('current_volunteers_list')
+    
+    # For GET requests, show confirmation page
+    return render(request, 'pages/confirm_mark_volunteer_completed.html', {
+        'application': application,
+    })
+
+
+@login_required
 def approve_opportunity_completion(request, student_opportunity_id):
     """
     Approve a pending opportunity completion.

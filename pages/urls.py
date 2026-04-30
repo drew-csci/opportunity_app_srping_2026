@@ -12,6 +12,7 @@ urlpatterns = [
     path('mark-pending/<int:student_opportunity_id>/', views.mark_opportunity_pending, name='mark_opportunity_pending'),
     path('organization-dashboard/', views.organization_dashboard, name='organization_dashboard'),
     path('organization/current-volunteers/', views.current_volunteers_list, name='current_volunteers_list'),
+    path('organization/volunteer/<int:application_id>/mark-completed/', views.mark_volunteer_completed, name='mark_volunteer_completed'),
     path('approve-opportunity/<int:student_opportunity_id>/', views.approve_opportunity_completion, name='approve_opportunity_completion'),
     path('deny-opportunity/<int:student_opportunity_id>/', views.deny_opportunity_completion, name='deny_opportunity_completion'),
     path('opportunities/', views.opportunity_list, name='opportunity_list'),
