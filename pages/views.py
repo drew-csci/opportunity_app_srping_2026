@@ -767,3 +767,64 @@ def submit_report(request):
         {'success': False, 'error': 'Invalid request method'},
         status=405
     )
+
+
+@login_required
+def report_queue(request):
+    """
+    Display queue of reported content for administrative review.
+    Only accessible to staff/admin users.
+    """
+    # Check if user is staff/admin
+    if not request.user.is_staff:
+        return HttpResponseForbidden("You do not have permission to access this page.")
+    
+    # Get all pending reports with related data
+    pending_reports = Report.objects.filter(
+        status=Report.ReportStatus.PENDING
+    ).select_related('reporter').order_by('-created_at')
+    
+    # Get summary counts
+    total_pending = pending_reports.count()
+    pending_by_type = {}
+    pending_by_reason = {}
+    
+    for report in pending_reports:
+        # Count by target type
+        pending_by_type[report.get_target_type_display()] = \
+            pending_by_type.get(report.get_target_type_display(), 0) + 1
+        
+        # Count by reason
+        pending_by_reason[report.get_reason_display()] = \
+            pending_by_reason.get(report.get_reason_display(), 0) + 1
+    
+    # Optional filtering
+    filter_target_type = request.GET.get('target_type')
+    filter_reason = request.GET.get('reason')
+    filter_status = request.GET.get('status', Report.ReportStatus.PENDING)
+    
+    reports = Report.objects.select_related('reporter').order_by('-created_at')
+    
+    if filter_target_type:
+        reports = reports.filter(target_type=filter_target_type)
+    
+    if filter_reason:
+        reports = reports.filter(reason=filter_reason)
+    
+    if filter_status:
+        reports = reports.filter(status=filter_status)
+    
+    context = {
+        'reports': reports,
+        'total_pending': total_pending,
+        'pending_by_type': pending_by_type,
+        'pending_by_reason': pending_by_reason,
+        'filter_target_type': filter_target_type,
+        'filter_reason': filter_reason,
+        'filter_status': filter_status,
+        'status_choices': Report.ReportStatus.choices,
+        'target_type_choices': Report.TargetType.choices,
+        'reason_choices': Report.ReportReason.choices,
+    }
+    
+    return render(request, 'pages/report_queue.html', context)
