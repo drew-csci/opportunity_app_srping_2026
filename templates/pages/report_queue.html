@@ -1,0 +1,278 @@
+{% extends 'base.html' %}
+
+{% block title %}Report Queue - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-5">
+  <div class="row mb-4">
+    <div class="col-md-12">
+      <h1>
+        <i class="bi bi-flag-fill"></i> Report Queue
+      </h1>
+      <p class="text-muted">Review and manage reported content submissions</p>
+    </div>
+  </div>
+
+  <!-- Summary Statistics -->
+  <div class="row mb-4">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-body">
+          <div class="row text-center">
+            <div class="col-md-3">
+              <div class="stat-item">
+                <h3 class="text-danger">{{ total_pending }}</h3>
+                <p class="text-muted">Pending Reports</p>
+              </div>
+            </div>
+            {% for type_name, count in pending_by_type.items %}
+            <div class="col-md-3">
+              <div class="stat-item">
+                <h3>{{ count }}</h3>
+                <p class="text-muted">{{ type_name }}</p>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="row mb-4">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Filters</h5>
+        </div>
+        <div class="card-body">
+          <form method="get" class="row g-3">
+            <div class="col-md-3">
+              <label for="filterTargetType" class="form-label">Content Type</label>
+              <select class="form-select" id="filterTargetType" name="target_type">
+                <option value="">-- All Types --</option>
+                {% for value, label in target_type_choices %}
+                  <option value="{{ value }}" {% if filter_target_type == value %}selected{% endif %}>
+                    {{ label }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="filterReason" class="form-label">Report Reason</label>
+              <select class="form-select" id="filterReason" name="reason">
+                <option value="">-- All Reasons --</option>
+                {% for value, label in reason_choices %}
+                  <option value="{{ value }}" {% if filter_reason == value %}selected{% endif %}>
+                    {{ label }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="filterStatus" class="form-label">Status</label>
+              <select class="form-select" id="filterStatus" name="status">
+                {% for value, label in status_choices %}
+                  <option value="{{ value }}" {% if filter_status == value %}selected{% endif %}>
+                    {{ label }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+              <button type="submit" class="btn btn-primary w-100">
+                <i class="bi bi-funnel"></i> Apply Filters
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reports Queue -->
+  <div class="row">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            Reports ({{ reports.count }})
+          </h5>
+        </div>
+        <div class="card-body">
+          {% if reports %}
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead class="table-light">
+                  <tr>
+                    <th>Report ID</th>
+                    <th>Reporter</th>
+                    <th>Content Type</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Submitted</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for report in reports %}
+                    <tr>
+                      <td>
+                        <code>#{{ report.id }}</code>
+                      </td>
+                      <td>
+                        <strong>{{ report.reporter.display_name }}</strong><br>
+                        <small class="text-muted">{{ report.reporter.email }}</small>
+                      </td>
+                      <td>
+                        <span class="badge bg-info">{{ report.get_target_type_display }}</span>
+                      </td>
+                      <td>
+                        <span class="badge" {% if report.reason == 'spam' %}style="background-color: #ffc107;"{% elif report.reason == 'harassment' %}style="background-color: #dc3545;"{% elif report.reason == 'misinformation' %}style="background-color: #fd7e14;"{% else %}style="background-color: #6c757d;"{% endif %}>
+                          {{ report.get_reason_display }}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="badge 
+                          {% if report.status == 'pending' %}bg-warning{% elif report.status == 'reviewing' %}bg-info{% elif report.status == 'resolved' %}bg-success{% else %}bg-secondary{% endif %}">
+                          {{ report.get_status_display }}
+                        </span>
+                      </td>
+                      <td>
+                        <small class="text-muted">{{ report.created_at|date:"M d, Y g:i A" }}</small>
+                      </td>
+                      <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                          <a href="#" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#reportDetailModal{{ report.id }}" title="View Details">
+                            <i class="bi bi-eye"></i> View
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+
+                    <!-- Report Detail Modal -->
+                    <div class="modal fade" id="reportDetailModal{{ report.id }}" tabindex="-1" aria-hidden="true">
+                      <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                          <div class="modal-header bg-light">
+                            <h5 class="modal-title">
+                              Report #{{ report.id }}
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                          </div>
+                          <div class="modal-body">
+                            <!-- Reporter Info -->
+                            <div class="mb-3">
+                              <label class="form-label"><strong>Reported By</strong></label>
+                              <p>
+                                {{ report.reporter.display_name }}<br>
+                                <small class="text-muted">{{ report.reporter.email }}</small>
+                              </p>
+                            </div>
+
+                            <!-- Content Info -->
+                            <div class="row mb-3">
+                              <div class="col-md-6">
+                                <label class="form-label"><strong>Content Type</strong></label>
+                                <p>{{ report.get_target_type_display }} (ID: {{ report.target_id }})</p>
+                              </div>
+                              <div class="col-md-6">
+                                <label class="form-label"><strong>Report Reason</strong></label>
+                                <p>{{ report.get_reason_display }}</p>
+                              </div>
+                            </div>
+
+                            <!-- Report Notes -->
+                            {% if report.notes %}
+                            <div class="mb-3">
+                              <label class="form-label"><strong>Reporter Notes</strong></label>
+                              <div class="alert alert-light border">
+                                {{ report.notes|linebreaks }}
+                              </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Timestamps -->
+                            <div class="row mb-3">
+                              <div class="col-md-6">
+                                <label class="form-label"><strong>Submitted</strong></label>
+                                <p>{{ report.created_at|date:"M d, Y g:i A" }}</p>
+                              </div>
+                              <div class="col-md-6">
+                                <label class="form-label"><strong>Last Updated</strong></label>
+                                <p>{{ report.updated_at|date:"M d, Y g:i A" }}</p>
+                              </div>
+                            </div>
+
+                            <!-- Current Status -->
+                            <div class="mb-3">
+                              <label class="form-label"><strong>Current Status</strong></label>
+                              <p>
+                                <span class="badge {% if report.status == 'pending' %}bg-warning{% elif report.status == 'reviewing' %}bg-info{% elif report.status == 'resolved' %}bg-success{% else %}bg-secondary{% endif %}">
+                                  {{ report.get_status_display }}
+                                </span>
+                              </p>
+                            </div>
+
+                            <!-- Review Info (if reviewed) -->
+                            {% if report.reviewed_by %}
+                            <div class="mb-3">
+                              <label class="form-label"><strong>Reviewed By</strong></label>
+                              <p>{{ report.reviewed_by.display_name }} ({{ report.reviewed_by.email }})</p>
+                            </div>
+
+                            {% if report.review_notes %}
+                            <div class="mb-3">
+                              <label class="form-label"><strong>Review Notes</strong></label>
+                              <div class="alert alert-light border">
+                                {{ report.review_notes|linebreaks }}
+                              </div>
+                            </div>
+                            {% endif %}
+                            {% endif %}
+
+                            <!-- Content Link -->
+                            {% if report.get_target_url %}
+                            <div class="mb-3">
+                              <label class="form-label"><strong>View Reported Content</strong></label>
+                              <p>
+                                <a href="{{ report.get_target_url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                  <i class="bi bi-box-arrow-up-right"></i> Open in New Tab
+                                </a>
+                              </p>
+                            </div>
+                            {% endif %}
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="alert alert-info" role="alert">
+              <i class="bi bi-info-circle"></i>
+              No reports found matching the current filters.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .stat-item {
+    padding: 1rem 0;
+  }
+
+  .stat-item h3 {
+    margin-bottom: 0.5rem;
+  }
+</style>
+{% endblock %}

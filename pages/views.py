@@ -3,20 +3,22 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
+from django.contrib.auth import get_user_model
+from django.contrib import messages
 
 from accounts.models import User
 
-from .models import Achievement, StudentOpportunity, Opportunity, OrganizationFollow, Notification, VolunteerProfile, VolunteerExperience
-from .forms import AchievementForm, MarkOpportunityPendingForm, DenyOpportunityForm, VolunteerProfileForm, VolunteerExperienceForm
-from django.contrib.auth import get_user_model
-from django.contrib import messages
-from django.utils import timezone
-from .models import Achievement, Opportunity, Application, VolunteerProfile, VolunteerExperience, OrganizationFollow, Message
-from .forms import AchievementForm, ApplicationForm, VolunteerProfileForm, VolunteerExperienceForm, MessageReplyForm
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
+from .models import (
+    Achievement, StudentOpportunity, Opportunity, OrganizationFollow, Notification,
+    VolunteerProfile, VolunteerExperience, Application, Message, Report
+)
+from .forms import (
+    AchievementForm, MarkOpportunityPendingForm, DenyOpportunityForm,
+    VolunteerProfileForm, VolunteerExperienceForm, ApplicationForm, MessageReplyForm
+)
 
 User = get_user_model()
+
 
 
 def welcome(request):
@@ -689,3 +691,140 @@ def volunteer_sent_message_detail(request, message_id):
         'message': message,
         'replies': replies,
     })
+
+
+@login_required
+@require_http_methods(["POST"])
+def submit_report(request):
+    """
+    Handle report submission from modal.
+    Expects POST data with: target_type, target_id, reason, notes
+    Returns JSON response with success/error status.
+    """
+    if request.method == 'POST':
+        target_type = request.POST.get('target_type')
+        target_id = request.POST.get('target_id')
+        reason = request.POST.get('reason')
+        notes = request.POST.get('notes', '').strip()
+        
+        # Validate required fields
+        if not all([target_type, target_id, reason]):
+            return JsonResponse(
+                {'success': False, 'error': 'Missing required fields'},
+                status=400
+            )
+        
+        # Validate target_type
+        valid_target_types = [choice[0] for choice in Report.TargetType.choices]
+        if target_type not in valid_target_types:
+            return JsonResponse(
+                {'success': False, 'error': 'Invalid target type'},
+                status=400
+            )
+        
+        # Validate reason
+        valid_reasons = [choice[0] for choice in Report.ReportReason.choices]
+        if reason not in valid_reasons:
+            return JsonResponse(
+                {'success': False, 'error': 'Invalid report reason'},
+                status=400
+            )
+        
+        # Validate target_id is a positive integer
+        try:
+            target_id = int(target_id)
+            if target_id <= 0:
+                raise ValueError
+        except (ValueError, TypeError):
+            return JsonResponse(
+                {'success': False, 'error': 'Invalid target ID'},
+                status=400
+            )
+        
+        try:
+            # Create the report
+            report = Report.objects.create(
+                reporter=request.user,
+                target_type=target_type,
+                target_id=target_id,
+                reason=reason,
+                notes=notes,
+                status=Report.ReportStatus.PENDING
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Thank you for your report. Our moderation team will review it shortly.',
+                'report_id': report.id
+            })
+        except Exception as e:
+            return JsonResponse(
+                {'success': False, 'error': f'Error submitting report: {str(e)}'},
+                status=500
+            )
+    
+    return JsonResponse(
+        {'success': False, 'error': 'Invalid request method'},
+        status=405
+    )
+
+
+@login_required
+def report_queue(request):
+    """
+    Display queue of reported content for administrative review.
+    Only accessible to staff/admin users.
+    """
+    # Check if user is staff/admin
+    if not request.user.is_staff:
+        return HttpResponseForbidden("You do not have permission to access this page.")
+    
+    # Get all pending reports with related data
+    pending_reports = Report.objects.filter(
+        status=Report.ReportStatus.PENDING
+    ).select_related('reporter').order_by('-created_at')
+    
+    # Get summary counts
+    total_pending = pending_reports.count()
+    pending_by_type = {}
+    pending_by_reason = {}
+    
+    for report in pending_reports:
+        # Count by target type
+        pending_by_type[report.get_target_type_display()] = \
+            pending_by_type.get(report.get_target_type_display(), 0) + 1
+        
+        # Count by reason
+        pending_by_reason[report.get_reason_display()] = \
+            pending_by_reason.get(report.get_reason_display(), 0) + 1
+    
+    # Optional filtering
+    filter_target_type = request.GET.get('target_type')
+    filter_reason = request.GET.get('reason')
+    filter_status = request.GET.get('status', Report.ReportStatus.PENDING)
+    
+    reports = Report.objects.select_related('reporter').order_by('-created_at')
+    
+    if filter_target_type:
+        reports = reports.filter(target_type=filter_target_type)
+    
+    if filter_reason:
+        reports = reports.filter(reason=filter_reason)
+    
+    if filter_status:
+        reports = reports.filter(status=filter_status)
+    
+    context = {
+        'reports': reports,
+        'total_pending': total_pending,
+        'pending_by_type': pending_by_type,
+        'pending_by_reason': pending_by_reason,
+        'filter_target_type': filter_target_type,
+        'filter_reason': filter_reason,
+        'filter_status': filter_status,
+        'status_choices': Report.ReportStatus.choices,
+        'target_type_choices': Report.TargetType.choices,
+        'reason_choices': Report.ReportReason.choices,
+    }
+    
+    return render(request, 'pages/report_queue.html', context)
