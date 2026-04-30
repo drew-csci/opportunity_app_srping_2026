@@ -1,5 +1,7 @@
 from django.contrib import admin
-from .models import Achievement, Opportunity, StudentOpportunity, Notification
+from .models import (
+    Achievement, Opportunity, StudentOpportunity, Notification, Application, Report
+)
 
 # Register your models here.
 
@@ -9,7 +11,6 @@ class AchievementAdmin(admin.ModelAdmin):
     list_filter = ('date_completed', 'student')
     search_fields = ('title', 'student__email', 'student__first_name', 'student__last_name')
     readonly_fields = ('id',)
-from .models import Achievement, Opportunity, Application
 
 
 @admin.register(Opportunity)
@@ -94,3 +95,28 @@ class AchievementAdmin(admin.ModelAdmin):
     list_display = ('title', 'student', 'date_completed')
     list_filter = ('date_completed',)
     search_fields = ('title', 'description', 'student__email')
+
+
+@admin.register(Report)
+class ReportAdmin(admin.ModelAdmin):
+    list_display = ('id', 'reporter', 'target_type', 'reason', 'status', 'created_at')
+    list_filter = ('status', 'target_type', 'reason', 'created_at')
+    search_fields = ('reporter__email', 'notes', 'review_notes')
+    readonly_fields = ('created_at', 'updated_at', 'id')
+    fieldsets = (
+        ('Report Information', {
+            'fields': ('id', 'reporter', 'target_type', 'target_id', 'created_at', 'updated_at')
+        }),
+        ('Report Content', {
+            'fields': ('reason', 'notes')
+        }),
+        ('Review', {
+            'fields': ('status', 'reviewed_by', 'review_notes')
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        """Automatically set reviewed_by to current user when status changes to reviewing."""
+        if change and form.cleaned_data.get('status') == 'reviewing' and not obj.reviewed_by:
+            obj.reviewed_by = request.user
+        super().save_model(request, obj, form, change)

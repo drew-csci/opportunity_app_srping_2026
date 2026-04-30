@@ -327,3 +327,110 @@ class Message(models.Model):
     def get_unread_sent_count(cls, volunteer):
         """Get count of unread messages sent by a volunteer."""
         return cls.objects.filter(sender=volunteer, is_read=False).count()
+
+
+class Report(models.Model):
+    """Model for content moderation reports.
+    
+    Allows users to report inappropriate content such as opportunities, profiles, or news updates.
+    """
+    
+    class TargetType(models.TextChoices):
+        OPPORTUNITY = 'opportunity', 'Opportunity'
+        PROFILE = 'profile', 'User Profile'
+        NEWS_UPDATE = 'news_update', 'News Update'
+    
+    class ReportReason(models.TextChoices):
+        INAPPROPRIATE = 'inappropriate', 'Inappropriate Content'
+        SPAM = 'spam', 'Spam'
+        HARASSMENT = 'harassment', 'Harassment or Bullying'
+        FRAUD = 'fraud', 'Fraud or Scam'
+        MISINFORMATION = 'misinformation', 'Misinformation or False Claims'
+        COPYRIGHT = 'copyright', 'Copyright Violation'
+        OTHER = 'other', 'Other'
+    
+    class ReportStatus(models.TextChoices):
+        PENDING = 'pending', 'Pending Review'
+        REVIEWING = 'reviewing', 'Under Review'
+        RESOLVED = 'resolved', 'Resolved'
+        DISMISSED = 'dismissed', 'Dismissed'
+    
+    reporter = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='reports_submitted',
+        help_text="User who submitted the report"
+    )
+    
+    target_type = models.CharField(
+        max_length=20,
+        choices=TargetType.choices,
+        help_text="Type of content being reported"
+    )
+    
+    target_id = models.PositiveIntegerField(
+        help_text="ID of the content being reported"
+    )
+    
+    reason = models.CharField(
+        max_length=50,
+        choices=ReportReason.choices,
+        help_text="Primary reason for the report"
+    )
+    
+    notes = models.TextField(
+        blank=True,
+        help_text="Additional details about the report"
+    )
+    
+    status = models.CharField(
+        max_length=20,
+        choices=ReportStatus.choices,
+        default=ReportStatus.PENDING,
+        help_text="Current status of the report"
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="When the report was submitted"
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        help_text="When the report was last updated"
+    )
+    
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reports_reviewed',
+        help_text="Moderator who reviewed the report"
+    )
+    
+    review_notes = models.TextField(
+        blank=True,
+        help_text="Moderator's notes on the review"
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['target_type', 'target_id']),
+            models.Index(fields=['status']),
+        ]
+    
+    def __str__(self):
+        return f"Report #{self.id} - {self.target_type} {self.target_id} ({self.get_status_display()})"
+    
+    def get_target_url(self):
+        """Get the URL to the reported content based on target type."""
+        if self.target_type == self.TargetType.OPPORTUNITY:
+            return f'/opportunity/{self.target_id}/'
+        elif self.target_type == self.TargetType.PROFILE:
+            return f'/organization/{self.target_id}/'
+        elif self.target_type == self.TargetType.NEWS_UPDATE:
+            return f'/news/{self.target_id}/'
+        return None
+

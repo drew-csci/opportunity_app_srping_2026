@@ -3,20 +3,22 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
+from django.contrib.auth import get_user_model
+from django.contrib import messages
 
 from accounts.models import User
 
-from .models import Achievement, StudentOpportunity, Opportunity, OrganizationFollow, Notification, VolunteerProfile, VolunteerExperience
-from .forms import AchievementForm, MarkOpportunityPendingForm, DenyOpportunityForm, VolunteerProfileForm, VolunteerExperienceForm
-from django.contrib.auth import get_user_model
-from django.contrib import messages
-from django.utils import timezone
-from .models import Achievement, Opportunity, Application, VolunteerProfile, VolunteerExperience, OrganizationFollow, Message
-from .forms import AchievementForm, ApplicationForm, VolunteerProfileForm, VolunteerExperienceForm, MessageReplyForm
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
+from .models import (
+    Achievement, StudentOpportunity, Opportunity, OrganizationFollow, Notification,
+    VolunteerProfile, VolunteerExperience, Application, Message, Report
+)
+from .forms import (
+    AchievementForm, MarkOpportunityPendingForm, DenyOpportunityForm,
+    VolunteerProfileForm, VolunteerExperienceForm, ApplicationForm, MessageReplyForm
+)
 
 User = get_user_model()
+
 
 
 def welcome(request):
