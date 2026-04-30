@@ -691,3 +691,79 @@ def volunteer_sent_message_detail(request, message_id):
         'message': message,
         'replies': replies,
     })
+
+
+@login_required
+@require_http_methods(["POST"])
+def submit_report(request):
+    """
+    Handle report submission from modal.
+    Expects POST data with: target_type, target_id, reason, notes
+    Returns JSON response with success/error status.
+    """
+    if request.method == 'POST':
+        target_type = request.POST.get('target_type')
+        target_id = request.POST.get('target_id')
+        reason = request.POST.get('reason')
+        notes = request.POST.get('notes', '').strip()
+        
+        # Validate required fields
+        if not all([target_type, target_id, reason]):
+            return JsonResponse(
+                {'success': False, 'error': 'Missing required fields'},
+                status=400
+            )
+        
+        # Validate target_type
+        valid_target_types = [choice[0] for choice in Report.TargetType.choices]
+        if target_type not in valid_target_types:
+            return JsonResponse(
+                {'success': False, 'error': 'Invalid target type'},
+                status=400
+            )
+        
+        # Validate reason
+        valid_reasons = [choice[0] for choice in Report.ReportReason.choices]
+        if reason not in valid_reasons:
+            return JsonResponse(
+                {'success': False, 'error': 'Invalid report reason'},
+                status=400
+            )
+        
+        # Validate target_id is a positive integer
+        try:
+            target_id = int(target_id)
+            if target_id <= 0:
+                raise ValueError
+        except (ValueError, TypeError):
+            return JsonResponse(
+                {'success': False, 'error': 'Invalid target ID'},
+                status=400
+            )
+        
+        try:
+            # Create the report
+            report = Report.objects.create(
+                reporter=request.user,
+                target_type=target_type,
+                target_id=target_id,
+                reason=reason,
+                notes=notes,
+                status=Report.ReportStatus.PENDING
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Thank you for your report. Our moderation team will review it shortly.',
+                'report_id': report.id
+            })
+        except Exception as e:
+            return JsonResponse(
+                {'success': False, 'error': f'Error submitting report: {str(e)}'},
+                status=500
+            )
+    
+    return JsonResponse(
+        {'success': False, 'error': 'Invalid request method'},
+        status=405
+    )

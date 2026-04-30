@@ -1,0 +1,141 @@
+<!-- Report Content Modal -->
+<div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="reportModalLabel">
+          <i class="bi bi-flag"></i> Report Content
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="reportForm" method="post">
+        {% csrf_token %}
+        <div class="modal-body">
+          <!-- Hidden fields for target information -->
+          <input type="hidden" id="targetType" name="target_type">
+          <input type="hidden" id="targetId" name="target_id">
+
+          <!-- Reason field -->
+          <div class="mb-3">
+            <label for="reportReason" class="form-label">
+              <strong>Reason for Report <span class="text-danger">*</span></strong>
+            </label>
+            <select class="form-select" id="reportReason" name="reason" required>
+              <option value="">-- Select a reason --</option>
+              <option value="spam">Spam</option>
+              <option value="harassment">Harassment or Bullying</option>
+              <option value="misinformation">Misleading or False Information</option>
+              <option value="other">Other</option>
+            </select>
+            <div class="form-text">Please select the main reason for your report</div>
+          </div>
+
+          <!-- Notes field -->
+          <div class="mb-3">
+            <label for="reportNotes" class="form-label">Additional Details</label>
+            <textarea 
+              class="form-control" 
+              id="reportNotes" 
+              name="notes" 
+              rows="4" 
+              maxlength="1000"
+              placeholder="Please provide any additional context or details about your report (optional)..."
+            ></textarea>
+            <div class="form-text">
+              <small id="charCount">0/1000 characters</small>
+            </div>
+          </div>
+
+          <!-- Info message -->
+          <div class="alert alert-info" role="alert">
+            <small>
+              <i class="bi bi-info-circle"></i>
+              Your report will be reviewed by our moderation team. Thank you for helping keep our community safe.
+            </small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger" id="submitReportBtn">
+            <i class="bi bi-flag"></i> Submit Report
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Report modal handling
+  document.addEventListener('DOMContentLoaded', function() {
+    const reportForm = document.getElementById('reportForm');
+    const reportNotesField = document.getElementById('reportNotes');
+    const charCount = document.getElementById('charCount');
+
+    // Update character count as user types
+    if (reportNotesField) {
+      reportNotesField.addEventListener('input', function() {
+        const count = this.value.length;
+        charCount.textContent = count + '/1000 characters';
+      });
+    }
+
+    // Handle form submission
+    if (reportForm) {
+      reportForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const targetType = document.getElementById('targetType').value;
+        const targetId = document.getElementById('targetId').value;
+        const reason = document.getElementById('reportReason').value;
+        const notes = (document.getElementById('reportNotes').value || '').trim();
+
+        // Validate
+        if (!targetType || !targetId || !reason) {
+          alert('Please fill in all required fields');
+          return;
+        }
+
+        // Submit via AJAX
+        const formData = new FormData();
+        formData.append('target_type', targetType);
+        formData.append('target_id', targetId);
+        formData.append('reason', reason);
+        formData.append('notes', notes);
+
+        fetch('{% url "submit_report" %}', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Show success message and close modal
+            alert(data.message);
+            bootstrap.Modal.getInstance(document.getElementById('reportModal')).hide();
+            // Reset form
+            reportForm.reset();
+            charCount.textContent = '0/1000 characters';
+          } else {
+            alert('Error: ' + (data.error || 'Unable to submit report'));
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while submitting your report');
+        });
+      });
+    }
+  });
+
+  // Function to open report modal with specific content
+  function openReportModal(targetType, targetId) {
+    document.getElementById('targetType').value = targetType;
+    document.getElementById('targetId').value = targetId;
+    const modal = new bootstrap.Modal(document.getElementById('reportModal'));
+    modal.show();
+  }
+</script>

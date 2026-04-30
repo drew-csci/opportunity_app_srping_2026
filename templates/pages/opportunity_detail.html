@@ -1,7 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
   <section class="dash-card">
-    <h1>{{ opportunity.title }}</h1>
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <h1>{{ opportunity.title }}</h1>
+      <button type="button" class="btn btn-outline-danger btn-sm" onclick="openReportModal('opportunity', {{ opportunity.id }})">
+        <i class="bi bi-flag"></i> Report
+      </button>
+    </div>
+    
     <p>{{ opportunity.description|linebreaksbr }}</p>
     <p class="muted">Posted {{ opportunity.posted_date|date:"F j, Y" }}</p>
 
@@ -25,4 +31,7 @@
       </div>
     {% endif %}
   </section>
+
+  <!-- Report Modal -->
+  {% include "pages/partials/report_modal.html" %}
 {% endblock %}

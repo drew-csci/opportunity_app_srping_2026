@@ -30,6 +30,15 @@
                 + Follow
             </button>
             {% endif %}
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="openReportModal('profile', {{ organization.id }})" title="Report this organization">
+                <i class="bi bi-flag"></i> Report
+            </button>
+        </div>
+        {% else %}
+        <div class="follow-section">
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="openReportModal('profile', {{ organization.id }})" title="Report this organization">
+                <i class="bi bi-flag"></i> Report
+            </button>
         </div>
         {% endif %}
     </div>
@@ -97,7 +106,8 @@
     {% endif %}
 </div>
 
-<style>
+<!-- Report Modal -->
+{% include "pages/partials/report_modal.html" %}
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 .org-profile-container {

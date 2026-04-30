@@ -37,5 +37,6 @@ urlpatterns = [
     path('messages/<int:message_id>/', views.message_detail, name='message_detail'),
     path('volunteer/sent-messages/', views.volunteer_sent_messages, name='volunteer_sent_messages'),
     path('volunteer/sent-messages/<int:message_id>/', views.volunteer_sent_message_detail, name='volunteer_sent_message_detail'),
+    path('report/submit/', views.submit_report, name='submit_report'),
 ]
 
