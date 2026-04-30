@@ -393,6 +393,44 @@ def organization_dashboard(request):
 
 
 @login_required
+def current_volunteers_list(request):
+    """
+    Display all current active volunteers (accepted applications) for an organization's opportunities.
+    Only accessible to users with 'organization' user type.
+    Supports filtering by opportunity.
+    """
+    # Verify the user is an organization
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'organization':
+        return redirect('screen1')
+
+    # Get all opportunities posted by this organization
+    opportunities = Opportunity.objects.filter(organization=request.user).order_by('-created_at')
+
+    # Get all accepted applications for this organization's opportunities
+    volunteers_query = Application.objects.filter(
+        opportunity__organization=request.user,
+        status=Application.Status.ACCEPTED
+    ).select_related('student', 'opportunity').order_by('-responded_date')
+
+    # Filter by opportunity if provided
+    selected_opportunity_id = request.GET.get('opportunity')
+    if selected_opportunity_id:
+        try:
+            volunteers_query = volunteers_query.filter(opportunity_id=selected_opportunity_id)
+        except (ValueError, TypeError):
+            pass
+
+    context = {
+        'volunteers': volunteers_query,
+        'opportunities': opportunities,
+        'selected_opportunity_id': selected_opportunity_id,
+        'volunteers_count': volunteers_query.count(),
+    }
+
+    return render(request, 'pages/current_volunteers_list.html', context)
+
+
+@login_required
 def approve_opportunity_completion(request, student_opportunity_id):
     """
     Approve a pending opportunity completion.
