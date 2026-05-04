@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+
 from django.http import JsonResponse, HttpResponseForbidden
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
@@ -166,6 +167,7 @@ def student_achievements(request):
         'achievements': achievements,
         'form': form,
     })
+
 
 
 @login_required

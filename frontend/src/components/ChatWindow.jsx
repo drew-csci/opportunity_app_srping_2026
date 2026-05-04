@@ -1,4 +1,9 @@
-import { useState } from "react";
+export default function ChatWindow({ conversation, messages, messageListEndRef }) {
+  const getOtherUserName = () => {
+    if (!conversation) return 'Unknown';
+    return conversation.other_user?.display_name || 'Unknown';
+  };
+
 
 export default function ChatWindow({
   organization,
@@ -28,6 +33,7 @@ export default function ChatWindow({
   }
 
   return (
+
     <div
       style={{
         flex: 1,
@@ -51,6 +57,7 @@ export default function ChatWindow({
       <div
         aria-label="chat-messages"
         style={{
+
           border: "1px solid #eee",
           borderRadius: 10,
           padding: 12,
@@ -133,4 +140,5 @@ export default function ChatWindow({
       </div>
     </div>
   );
+ }
 }

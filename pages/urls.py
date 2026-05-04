@@ -22,6 +22,7 @@ urlpatterns = [
     path('organization/applications/<int:application_id>/review/', views.review_application, name='review_application'),
     path('faq/', views.faq, name='faq'),
     path('dashboard/', views.dashboard, name='dashboard'),
+
     path('volunteer/profile/', views.volunteer_profile, name='volunteer_profile'),
     path('volunteer/profile/edit/', views.volunteer_profile_edit, name='volunteer_profile_edit'),
     path('volunteer/profile/experience/add/', views.experience_add, name='experience_add'),

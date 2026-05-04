@@ -17,6 +17,7 @@ class Achievement(models.Model):
         return self.title
 
 
+
 class Opportunity(models.Model):
     organization = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -196,6 +197,7 @@ class OrganizationFollow(models.Model):
     organization = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
+
         related_name='followers',
         limit_choices_to={'user_type': 'organization'},
     )
@@ -214,6 +216,7 @@ class Message(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='sent_messages',
+
         limit_choices_to={'user_type': 'student'},
     )
     recipient = models.ForeignKey(
