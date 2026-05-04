@@ -212,14 +212,21 @@ def review_application(request, application_id): # View for organizations to rev
 def faq(request):
     return render(request, 'pages/faq.html')
 
+
+@login_required
 def dashboard(request):
-    context = {}
+    role = request.user.user_type.title() if hasattr(request.user, 'user_type') else 'User'
+    context = {
+        'role': role,
+    }
     
-    # If user is an organization, add unread message count
     if hasattr(request.user, 'user_type') and request.user.user_type == 'organization':
-        unread_count = Message.objects.filter(recipient=request.user, is_read=False).count()
+        unread_count = Message.objects.filter(
+            recipient=request.user, 
+            is_read=False
+        ).count()
         context['unread_message_count'] = unread_count
-    
+        
     return render(request, 'pages/dashboard.html', context)
 
 
