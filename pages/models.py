@@ -186,6 +186,39 @@ class VolunteerExperience(models.Model):
     def __str__(self):
         return f"{self.role} at {self.organization_name}"
     
+class OrganizationProfile(models.Model):
+    organization = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='organization_profile',
+    )
+    organization_name = models.CharField(max_length=200, blank=True)
+    mission = models.TextField(blank=True)
+    location = models.CharField(max_length=200, blank=True)
+    contact_info = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.organization.display_name} profile"
+
+
+class OrganizationImpactMetric(models.Model):
+    organization_profile = models.ForeignKey(
+        OrganizationProfile,
+        on_delete=models.CASCADE,
+        related_name='impact_metrics',
+    )
+    title = models.CharField(max_length=200)
+    value = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.title}: {self.value}"
+
+
 class OrganizationFollow(models.Model):
     student = models.ForeignKey(
         settings.AUTH_USER_MODEL,

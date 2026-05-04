@@ -1,7 +1,7 @@
 from django import forms
-from .models import Achievement, StudentOpportunity, VolunteerProfile, VolunteerExperience
+from .models import Achievement, StudentOpportunity, VolunteerProfile, VolunteerExperience, OrganizationProfile, OrganizationImpactMetric
 from .models import Achievement, Application, Message
-from .models import VolunteerProfile, VolunteerExperience
+
 
 
 class AchievementForm(forms.ModelForm):
@@ -100,6 +100,23 @@ class VolunteerExperienceForm(forms.ModelForm):
         }
 
 
+class OrganizationProfileForm(forms.ModelForm):
+    class Meta:
+        model = OrganizationProfile
+        fields = ['organization_name', 'mission', 'location', 'contact_info']
+        widgets = {
+            'mission': forms.Textarea(attrs={'rows': 4}),
+            'contact_info': forms.Textarea(attrs={'rows': 3}),
+        }
+
+
+class OrganizationImpactMetricForm(forms.ModelForm):
+    class Meta:
+        model = OrganizationImpactMetric
+        fields = ['title', 'value', 'description']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
 class MessageReplyForm(forms.Form):
     """Form for replying to messages with character limit validation."""
     

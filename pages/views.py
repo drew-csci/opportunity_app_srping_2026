@@ -3,18 +3,14 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
+from django.contrib import messages
+
 
 from accounts.models import User
 
-from .models import Achievement, StudentOpportunity, Opportunity, OrganizationFollow, Notification, VolunteerProfile, VolunteerExperience
-from .forms import AchievementForm, MarkOpportunityPendingForm, DenyOpportunityForm, VolunteerProfileForm, VolunteerExperienceForm
+from .models import Achievement, StudentOpportunity, Opportunity, OrganizationFollow, Notification, VolunteerProfile, VolunteerExperience, Application, OrganizationProfile, OrganizationImpactMetric, OrganizationFollow, Message
+from .forms import AchievementForm, MarkOpportunityPendingForm, DenyOpportunityForm, VolunteerProfileForm, VolunteerExperienceForm, ApplicationForm, OrganizationProfileForm, OrganizationImpactMetricForm, MessageReplyForm
 from django.contrib.auth import get_user_model
-from django.contrib import messages
-from django.utils import timezone
-from .models import Achievement, Opportunity, Application, VolunteerProfile, VolunteerExperience, OrganizationFollow, Message
-from .forms import AchievementForm, ApplicationForm, VolunteerProfileForm, VolunteerExperienceForm, MessageReplyForm
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
 
 User = get_user_model()
 
@@ -312,8 +308,8 @@ def volunteer_profile(request):
 
 @login_required
 def organization_profile(request, org_id):
-    """Display an organization's profile with follow/unfollow button and opportunities."""
     organization = get_object_or_404(User, id=org_id, user_type='organization')
+    profile, _ = OrganizationProfile.objects.get_or_create(organization=organization)
     is_following = False
     unread_message_count = 0
 
@@ -326,15 +322,112 @@ def organization_profile(request, org_id):
         # If organization is viewing their own profile, show unread message count
         unread_message_count = Message.objects.filter(recipient=request.user, is_read=False).count()
 
-    # TODO: Query opportunities when Opportunity model is added
-    opportunities = []
+    opportunities = Opportunity.objects.filter(organization=organization, is_active=True).order_by('-created_at')
 
     return render(request, 'pages/organization_profile.html', {
         'organization': organization,
+        'profile': profile,
         'is_following': is_following,
         'opportunities': opportunities,
+        'impact_metrics': profile.impact_metrics.all(),
         'unread_message_count': unread_message_count,
     })
+
+
+@login_required
+def organization_profile_edit(request, org_id):
+    organization = get_object_or_404(User, id=org_id, user_type='organization')
+    if request.user != organization:
+        return redirect('organization_profile', org_id=org_id)
+
+    profile, _ = OrganizationProfile.objects.get_or_create(organization=organization)
+
+    if request.method == 'POST':
+        form = OrganizationProfileForm(request.POST, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Organization profile updated.')
+            return redirect('organization_profile', org_id=org_id)
+    else:
+        form = OrganizationProfileForm(instance=profile)
+
+    return render(request, 'pages/organization_profile_edit.html', {
+        'organization': organization,
+        'profile': profile,
+        'form': form,
+        'impact_metrics': profile.impact_metrics.all(),
+    })
+
+
+@login_required
+def organization_metric_add(request, org_id):
+    organization = get_object_or_404(User, id=org_id, user_type='organization')
+    if request.user != organization:
+        return redirect('organization_profile', org_id=org_id)
+
+    profile, _ = OrganizationProfile.objects.get_or_create(organization=organization)
+
+    if request.method == 'POST':
+        form = OrganizationImpactMetricForm(request.POST)
+        if form.is_valid():
+            metric = form.save(commit=False)
+            metric.organization_profile = profile
+            metric.save()
+            messages.success(request, 'Impact metric added.')
+            return redirect('organization_profile_edit', org_id=org_id)
+    else:
+        form = OrganizationImpactMetricForm()
+
+    return render(request, 'pages/organization_profile_edit.html', {
+        'organization': organization,
+        'profile': profile,
+        'form': OrganizationProfileForm(instance=profile),
+        'metric_form': form,
+        'impact_metrics': profile.impact_metrics.all(),
+        'editing_metric': None,
+    })
+
+
+@login_required
+def organization_metric_edit(request, org_id, pk):
+    organization = get_object_or_404(User, id=org_id, user_type='organization')
+    if request.user != organization:
+        return redirect('organization_profile', org_id=org_id)
+
+    profile, _ = OrganizationProfile.objects.get_or_create(organization=organization)
+    metric = get_object_or_404(OrganizationImpactMetric, pk=pk, organization_profile=profile)
+
+    if request.method == 'POST':
+        form = OrganizationImpactMetricForm(request.POST, instance=metric)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Impact metric updated.')
+            return redirect('organization_profile_edit', org_id=org_id)
+    else:
+        form = OrganizationImpactMetricForm(instance=metric)
+
+    return render(request, 'pages/organization_profile_edit.html', {
+        'organization': organization,
+        'profile': profile,
+        'form': OrganizationProfileForm(instance=profile),
+        'metric_form': form,
+        'impact_metrics': profile.impact_metrics.all(),
+        'editing_metric': metric,
+    })
+
+
+@login_required
+def organization_metric_delete(request, org_id, pk):
+    organization = get_object_or_404(User, id=org_id, user_type='organization')
+    if request.user != organization:
+        return redirect('organization_profile', org_id=org_id)
+
+    profile, _ = OrganizationProfile.objects.get_or_create(organization=organization)
+    metric = get_object_or_404(OrganizationImpactMetric, pk=pk, organization_profile=profile)
+    if request.method == 'POST':
+        metric.delete()
+        messages.success(request, 'Impact metric deleted.')
+    return redirect('organization_profile_edit', org_id=org_id)
 
 
 @login_required
@@ -561,6 +654,7 @@ def follow_organization(request, org_id):
     return redirect('organization_profile', org_id=org_id)
 
 
+@login_required
 @login_required
 def unfollow_organization(request, org_id):
     """Unfollow an organization. Supports both regular POST and AJAX requests."""
