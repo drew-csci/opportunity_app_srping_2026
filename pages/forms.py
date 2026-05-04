@@ -1,7 +1,7 @@
 from django import forms
-from .models import Achievement, StudentOpportunity, VolunteerProfile, VolunteerExperience
-from .models import Achievement, Application
-from .models import VolunteerProfile, VolunteerExperience, OrganizationProfile, OrganizationImpactMetric
+from .models import Achievement, StudentOpportunity, VolunteerProfile, VolunteerExperience, OrganizationProfile, OrganizationImpactMetric
+from .models import Achievement, Application, Message
+
 
 
 class AchievementForm(forms.ModelForm):
@@ -117,3 +117,39 @@ class OrganizationImpactMetricForm(forms.ModelForm):
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
         }
+class MessageReplyForm(forms.Form):
+    """Form for replying to messages with character limit validation."""
+    
+    CHAR_LIMIT = 1000
+    
+    reply_content = forms.CharField(
+        max_length=CHAR_LIMIT,
+        widget=forms.Textarea(attrs={
+            'rows': 5,
+            'placeholder': 'Type your reply here (max 1000 characters)...',
+            'class': 'form-control',
+        }),
+        label='Your Reply',
+        help_text=f'Maximum {CHAR_LIMIT} characters',
+        strip=True,
+    )
+    
+    def clean_reply_content(self):
+        """Validate the reply content."""
+        content = self.cleaned_data.get('reply_content', '').strip()
+        
+        # Check if field is empty
+        if not content:
+            raise forms.ValidationError(
+                'Please enter a message. Your reply cannot be blank.'
+            )
+        
+        # Check character limit
+        if len(content) > self.CHAR_LIMIT:
+            raise forms.ValidationError(
+                f'Your reply exceeds the {self.CHAR_LIMIT} character limit. '
+                f'Current length: {len(content)} characters. '
+                f'Please remove {len(content) - self.CHAR_LIMIT} characters.'
+            )
+        
+        return content

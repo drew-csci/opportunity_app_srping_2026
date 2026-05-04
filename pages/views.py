@@ -3,19 +3,14 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
-
-from accounts.models import User
-
-from .models import Achievement, StudentOpportunity, Opportunity, OrganizationFollow, Notification, VolunteerProfile, VolunteerExperience
-from .forms import AchievementForm, MarkOpportunityPendingForm, DenyOpportunityForm, VolunteerProfileForm, VolunteerExperienceForm
-from django.contrib.auth import get_user_model
 from django.contrib import messages
-from django.utils import timezone
+
+
 from accounts.models import User
-from .models import Achievement, Opportunity, Application, VolunteerProfile, VolunteerExperience, OrganizationProfile, OrganizationImpactMetric, OrganizationFollow
-from .forms import AchievementForm, ApplicationForm, VolunteerProfileForm, VolunteerExperienceForm, OrganizationProfileForm, OrganizationImpactMetricForm
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
+
+from .models import Achievement, StudentOpportunity, Opportunity, OrganizationFollow, Notification, VolunteerProfile, VolunteerExperience, Application, OrganizationProfile, OrganizationImpactMetric, OrganizationFollow, Message
+from .forms import AchievementForm, MarkOpportunityPendingForm, DenyOpportunityForm, VolunteerProfileForm, VolunteerExperienceForm, ApplicationForm, OrganizationProfileForm, OrganizationImpactMetricForm, MessageReplyForm
+from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
@@ -214,7 +209,14 @@ def faq(request):
     return render(request, 'pages/faq.html')
 
 def dashboard(request):
-    return render(request, 'pages/dashboard.html')
+    context = {}
+    
+    # If user is an organization, add unread message count
+    if hasattr(request.user, 'user_type') and request.user.user_type == 'organization':
+        unread_count = Message.objects.filter(recipient=request.user, is_read=False).count()
+        context['unread_message_count'] = unread_count
+    
+    return render(request, 'pages/dashboard.html', context)
 
 
 @login_required
@@ -309,12 +311,16 @@ def organization_profile(request, org_id):
     organization = get_object_or_404(User, id=org_id, user_type='organization')
     profile, _ = OrganizationProfile.objects.get_or_create(organization=organization)
     is_following = False
+    unread_message_count = 0
 
     if request.user.user_type == 'student':
         is_following = OrganizationFollow.objects.filter(
             student=request.user,
             organization=organization,
         ).exists()
+    elif request.user.user_type == 'organization' and request.user.id == org_id:
+        # If organization is viewing their own profile, show unread message count
+        unread_message_count = Message.objects.filter(recipient=request.user, is_read=False).count()
 
     opportunities = Opportunity.objects.filter(organization=organization, is_active=True).order_by('-created_at')
 
@@ -324,6 +330,7 @@ def organization_profile(request, org_id):
         'is_following': is_following,
         'opportunities': opportunities,
         'impact_metrics': profile.impact_metrics.all(),
+        'unread_message_count': unread_message_count,
     })
 
 
@@ -684,4 +691,95 @@ def followed_organizations(request):
 
     return render(request, 'pages/followed_organizations.html', {
         'follows': follows,
+    })
+
+
+@login_required
+def organization_inbox(request):
+    """Display inbox for organizations to see messages from volunteers, sorted by most recent."""
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'organization':
+        return redirect('screen1')
+
+    # Get all messages received by this organization, ordered by most recent first
+    inbox_messages = Message.objects.filter(recipient=request.user).select_related('sender').order_by('-sent_at')
+
+    return render(request, 'pages/organization_inbox.html', {
+        'messages': inbox_messages,
+    })
+
+
+@login_required
+def message_detail(request, message_id):
+    """Display a specific message and handle replies with character limit validation."""
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'organization':
+        return redirect('screen1')
+
+    message = get_object_or_404(Message, id=message_id, recipient=request.user)
+    
+    # Mark message as read (using the model method that sets read_at timestamp)
+    message.mark_as_read()
+    
+    # Get all replies to this message
+    replies = message.replies.all().select_related('sender', 'recipient').order_by('sent_at')
+    
+    # Handle reply submission
+    if request.method == 'POST':
+        form = MessageReplyForm(request.POST)
+        if form.is_valid():
+            try:
+                # Create a new reply message
+                reply = Message.objects.create(
+                    sender=request.user,  # Organization is sending the reply
+                    recipient=message.sender,  # Reply goes back to the volunteer
+                    subject=f"Re: {message.subject}",
+                    content=form.cleaned_data['reply_content'],
+                    reply_to=message,  # Link to the original message
+                )
+                messages.success(request, 'Your reply has been sent successfully!')
+                return redirect('message_detail', message_id=message_id)
+            except Exception as e:
+                messages.error(request, f'There was an error sending your reply: {str(e)}')
+        else:
+            # Display form errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, str(error))
+    else:
+        form = MessageReplyForm()
+
+    return render(request, 'pages/message_detail.html', {
+        'message': message,
+        'replies': replies,
+        'form': form,
+    })
+
+
+@login_required
+def volunteer_sent_messages(request):
+    """Display all messages sent by a volunteer (student) with read receipt status."""
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
+        return redirect('screen1')
+
+    # Get all messages sent by this student, ordered by most recent first
+    sent_messages = Message.objects.filter(sender=request.user).select_related('recipient').order_by('-sent_at')
+
+    return render(request, 'pages/volunteer_sent_messages.html', {
+        'messages': sent_messages,
+    })
+
+
+@login_required
+def volunteer_sent_message_detail(request, message_id):
+    """Display a sent message with read receipt information and any replies for a volunteer."""
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
+        return redirect('screen1')
+
+    message = get_object_or_404(Message, id=message_id, sender=request.user)
+    
+    # Get all replies to this message
+    replies = message.replies.all().select_related('sender', 'recipient').order_by('sent_at')
+
+    return render(request, 'pages/volunteer_sent_message_detail.html', {
+        'message': message,
+        'replies': replies,
     })
