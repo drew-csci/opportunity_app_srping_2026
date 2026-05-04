@@ -400,6 +400,94 @@ def organization_dashboard(request):
 
 
 @login_required
+def current_volunteers_list(request):
+    """
+    Display all current active volunteers (accepted applications) for an organization's opportunities.
+    Only accessible to users with 'organization' user type.
+    Supports filtering by opportunity.
+    """
+    # Verify the user is an organization
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'organization':
+        return redirect('screen1')
+
+    # Get all opportunities posted by this organization
+    opportunities = Opportunity.objects.filter(organization=request.user).order_by('-created_at')
+
+    # Get all accepted applications for this organization's opportunities
+    volunteers_query = Application.objects.filter(
+        opportunity__organization=request.user,
+        status=Application.Status.ACCEPTED
+    ).select_related('student', 'opportunity').order_by('-responded_date')
+
+    # Filter by opportunity if provided
+    selected_opportunity_id = request.GET.get('opportunity')
+    if selected_opportunity_id:
+        try:
+            volunteers_query = volunteers_query.filter(opportunity_id=selected_opportunity_id)
+        except (ValueError, TypeError):
+            pass
+
+    context = {
+        'volunteers': volunteers_query,
+        'opportunities': opportunities,
+        'selected_opportunity_id': selected_opportunity_id,
+        'volunteers_count': volunteers_query.count(),
+    }
+
+    return render(request, 'pages/current_volunteers_list.html', context)
+
+
+@login_required
+def mark_volunteer_completed(request, application_id):
+    """
+    Mark a volunteer's application as completed and add to their experience.
+    Creates a VolunteerExperience record for the volunteer.
+    Only accessible to the organization that posted the opportunity.
+    """
+    # Verify user is organization
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'organization':
+        return HttpResponseForbidden("Only organizations can mark volunteers as completed.")
+    
+    # Get the application
+    application = get_object_or_404(
+        Application,
+        id=application_id,
+        opportunity__organization=request.user,
+        status=Application.Status.ACCEPTED
+    )
+    
+    if request.method == 'POST':
+        try:
+            # Create VolunteerExperience record
+            VolunteerExperience.objects.create(
+                volunteer=application.student,
+                organization_name=request.user.display_name or request.user.email,
+                role=application.opportunity.title,
+                description=application.opportunity.description,
+                start_date=application.responded_date.date() if application.responded_date else timezone.now().date(),
+                end_date=timezone.now().date(),
+                is_current=False,
+            )
+            
+            messages.success(
+                request,
+                f'{application.student.display_name} has been marked as completed and experience added to their profile.'
+            )
+        except Exception as e:
+            messages.error(
+                request,
+                f'Error marking volunteer as completed: {str(e)}'
+            )
+        
+        return redirect('current_volunteers_list')
+    
+    # For GET requests, show confirmation page
+    return render(request, 'pages/confirm_mark_volunteer_completed.html', {
+        'application': application,
+    })
+
+
+@login_required
 def approve_opportunity_completion(request, student_opportunity_id):
     """
     Approve a pending opportunity completion.

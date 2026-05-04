@@ -5,7 +5,20 @@
   <div class="row mb-4">
     <div class="col-md-12">
       <h1>Organization Dashboard</h1>
-      <p class="text-muted">Manage pending opportunity completions from your students.</p>
+      <p class="text-muted">Manage pending opportunity completions and view active volunteers.</p>
+    </div>
+  </div>
+
+  <!-- Quick Navigation Section -->
+  <div class="row mb-5">
+    <div class="col-md-12">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <a href="{% url 'current_volunteers_list' %}" class="btn btn-primary btn-lg w-100">
+            <i class="bi bi-people-fill"></i> View Current Volunteers
+          </a>
+        </div>
+      </div>
     </div>
   </div>
 
