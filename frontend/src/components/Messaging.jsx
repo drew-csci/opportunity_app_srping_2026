@@ -1,194 +1,227 @@
-import { useState, useEffect, useRef } from 'react';
-import ConversationList from './ConversationList';
-import ChatWindow from './ChatWindow';
-import MessageInput from './MessageInput';
-import FAQSuggestions from './FAQSuggestions';
+import { useEffect, useMemo, useState } from "react";
+import ConversationList from "./ConversationList";
+import ChatWindow from "./ChatWindow";
+
+const API_BASE = "http://localhost:8000";
+
+// Fallback mocks
+const mockConversations = [
+  {
+    id: 1,
+    volunteer_name: "Tin Tin Do",
+    organization_name: "Red Cross",
+    last_message_at: "2026-02-27T18:00:00Z",
+  },
+  {
+    id: 2,
+    volunteer_name: "Tin Tin Do",
+    organization_name: "Food Bank",
+    last_message_at: "2026-02-26T16:00:00Z",
+  },
+];
+
+const mockMessagesByConvId = {
+  1: [
+    {
+      id: 11,
+      conversation_id: 1,
+      sender_type: "volunteer",
+      content: "Hi, I have a question about this opportunity.",
+      created_at: "2026-02-27T18:00:00Z",
+    },
+    {
+      id: 12,
+      conversation_id: 1,
+      sender_type: "organization",
+      content: "Sure! What would you like to know?",
+      created_at: "2026-02-27T18:01:00Z",
+    },
+  ],
+  2: [
+    {
+      id: 21,
+      conversation_id: 2,
+      sender_type: "volunteer",
+      content: "Hello, is this role remote or in-person?",
+      created_at: "2026-02-26T16:00:00Z",
+    },
+    {
+      id: 22,
+      conversation_id: 2,
+      sender_type: "organization",
+      content: "Mostly in-person, some remote coordination.",
+      created_at: "2026-02-26T16:02:00Z",
+    },
+  ],
+};
+
+// FAQ suggestions
+const FAQ_SUGGESTIONS = [
+  "Where is the location?",
+  "What skills are required?",
+  "What is the schedule?",
+];
+
+// simple mock FAQ response
+function getMockFaqResponse(text) {
+  const lowered = text.toLowerCase();
+  if (lowered.includes("hours")) {
+    return "Our volunteer hours are Monday–Friday, 9 AM–5 PM.";
+  }
+  if (lowered.includes("location")) {
+    return "The location is listed in the opportunity details.";
+  }
+  return "Thanks for your message. We will get back to you soon.";
+}
+
+// normalize
+function normalizeConvs(convs) {
+  return (convs || []).map((c, idx) => ({
+    id: c.id ?? idx,
+    volunteer_name: c.volunteer_name ?? "Tin Tin Do",
+    organization_name: c.organization_name ?? "Unknown Org",
+    last_message_at: c.last_message_at ?? new Date().toISOString(),
+  }));
+}
+
+function normalizeMsgs(msgs, conversation_id) {
+  return (msgs || []).map((m, idx) => ({
+    id: m.id ?? `m-${conversation_id}-${idx}`,
+    conversation_id: m.conversation_id ?? conversation_id,
+    sender_type: m.sender_type ?? "volunteer",
+    content: m.content ?? "",
+    created_at: m.created_at ?? new Date().toISOString(),
+  }));
+}
 
 export default function Messaging() {
-  const [conversations, setConversations] = useState([]);
-  const [selectedConversation, setSelectedConversation] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [faqSuggestions, setFaqSuggestions] = useState([]);
-  const messageListEndRef = useRef(null);
 
-  // Fetch conversations on component mount
+  const volunteerName = "Tin Tin Do";
+
+  const [conversations, setConversations] = useState([]);
+  const [activeId, setActiveId] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+
+  const [usingMock, setUsingMock] = useState(false);
+
+  const activeConversation = useMemo(
+    () => conversations.find((c) => c.id === activeId),
+    [conversations, activeId]
+  );
+
   useEffect(() => {
-    fetchConversations();
+    loadConversations();
   }, []);
 
-  // Auto-scroll to bottom when messages change
   useEffect(() => {
-    messageListEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (activeId) loadMessages(activeId);
+  }, [activeId]);
 
-  // Fetch messages when conversation changes
-  useEffect(() => {
-    if (selectedConversation) {
-      fetchMessages(selectedConversation.id);
-    }
-  }, [selectedConversation]);
-
-  const fetchConversations = async () => {
+  async function loadConversations() {
     try {
-      setLoading(true);
-      const response = await fetch('/api/conversations/', {
-        credentials: 'include',
-      });
-      if (!response.ok) throw new Error('Failed to fetch conversations');
-      const data = await response.json();
+      setUsingMock(false);
+      const res = await fetch(
+        `${API_BASE}/api/conversations?volunteer_name=${encodeURIComponent(volunteerName)}`
+      );
+      if (!res.ok) throw new Error();
+      const data = normalizeConvs(await res.json());
       setConversations(data);
-      if (data.length > 0 && !selectedConversation) {
-        setSelectedConversation(data[0]);
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      setActiveId((prev) => prev ?? data[0]?.id);
+    } catch {
+      setUsingMock(true);
+      const data = normalizeConvs(mockConversations);
+      setConversations(data);
+      setActiveId((prev) => prev ?? data[0]?.id);
     }
-  };
-
-  const fetchMessages = async (conversationId) => {
-    try {
-      const response = await fetch(`/api/messages/?conversation_id=${conversationId}`, {
-        credentials: 'include',
-      });
-      if (!response.ok) throw new Error('Failed to fetch messages');
-      const data = await response.json();
-      setMessages(data);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const handleSendMessage = async (content) => {
-    if (!selectedConversation) return;
-
-    try {
-      const response = await fetch('/api/messages/send/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCsrfToken(),
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          conversation_id: selectedConversation.id,
-          content: content,
-        }),
-      });
-
-      if (!response.ok) throw new Error('Failed to send message');
-      const newMessage = await response.json();
-      setMessages([...messages, newMessage]);
-
-      // Fetch FAQ suggestions after sending
-      fetchFaqSuggestions(content);
-
-      // Update conversation last message
-      fetchConversations();
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const fetchFaqSuggestions = async (messageContent) => {
-    try {
-      const response = await fetch('/api/faq-suggestions/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCsrfToken(),
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          message_content: messageContent,
-        }),
-      });
-
-      if (!response.ok) throw new Error('Failed to fetch FAQ suggestions');
-      const data = await response.json();
-      setFaqSuggestions(data);
-    } catch (err) {
-      console.error('Error fetching FAQ suggestions:', err);
-    }
-  };
-
-  const handleConversationSelect = (conversation) => {
-    setSelectedConversation(conversation);
-    setFaqSuggestions([]);
-  };
-
-  const handleCreateConversation = async (organizationId) => {
-    try {
-      const response = await fetch('/api/conversations/create/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCsrfToken(),
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          organization_id: organizationId,
-        }),
-      });
-
-      if (!response.ok) throw new Error('Failed to create conversation');
-      const newConversation = await response.json();
-      setConversations([newConversation, ...conversations]);
-      setSelectedConversation(newConversation);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const getCsrfToken = () => {
-    const name = 'csrftoken';
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-      const cookies = document.cookie.split(';');
-      for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].trim();
-        if (cookie.substring(0, name.length + 1) === name + '=') {
-          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-          break;
-        }
-      }
-    }
-    return cookieValue;
-  };
-
-  if (loading) {
-    return <div className="messaging-loading">Loading conversations...</div>;
   }
 
-  if (error) {
-    return <div className="messaging-error">Error: {error}</div>;
+  async function loadMessages(conversationId) {
+    try {
+      if (usingMock) {
+        setMessages(normalizeMsgs(mockMessagesByConvId[conversationId] || [], conversationId));
+        return;
+      }
+      const res = await fetch(`${API_BASE}/api/conversations/${conversationId}/messages`);
+      if (!res.ok) throw new Error();
+      const data = normalizeMsgs(await res.json(), conversationId);
+      setMessages(data);
+    } catch {
+      setMessages(normalizeMsgs(mockMessagesByConvId[conversationId] || [], conversationId));
+    }
+  }
+
+  async function onSend() {
+    if (!activeId) return;
+    const text = input.trim();
+    if (!text) return;
+
+    const optimistic = {
+      id: "tmp-" + Math.random(),
+      conversation_id: activeId,
+      sender_type: "volunteer",
+      content: text,
+      created_at: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, optimistic]);
+    setInput("");
+
+    // mock mode → auto FAQ response
+    if (usingMock) {
+      setTimeout(() => {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: "bot-" + Math.random(),
+            sender_type: "organization",
+            content: getMockFaqResponse(text),
+            created_at: new Date().toISOString(),
+          },
+        ]);
+      }, 300);
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/conversations/${activeId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sender_type: "volunteer", content: text }),
+      });
+      if (!res.ok) throw new Error();
+
+      await loadMessages(activeId);
+      await loadConversations();
+    } catch {
+      setUsingMock(true);
+    }
   }
 
   return (
-    <div className="messaging-container" style={{ display: 'flex', height: '100vh' }}>
-      <div className="messaging-sidebar" style={{ width: '25%', borderRight: '1px solid #ddd', overflowY: 'auto' }}>
-        <ConversationList
-          conversations={conversations}
-          selectedConversation={selectedConversation}
-          onConversationSelect={handleConversationSelect}
-          onCreateConversation={handleCreateConversation}
-        />
+    <div>
+      <h2>US-011 — Messaging</h2>
+
+      <div style={{ fontSize: 12, color: "#666", marginBottom: 10 }}>
+        Data source: {usingMock ? "Mock" : "API"}
       </div>
 
-      <div className="messaging-main" style={{ width: '75%', display: 'flex', flexDirection: 'column' }}>
-        {selectedConversation ? (
-          <>
-            <ChatWindow
-              conversation={selectedConversation}
-              messages={messages}
-              messageListEndRef={messageListEndRef}
-            />
-            <FAQSuggestions suggestions={faqSuggestions} />
-            <MessageInput onSendMessage={handleSendMessage} />
-          </>
+      <div style={{ display: "flex", gap: 12 }}>
+        <ConversationList
+          conversations={conversations}
+          activeId={activeId}
+          onSelect={setActiveId}
+        />
+
+        {activeConversation ? (
+          <ChatWindow
+            organization={activeConversation.organization_name}
+            messages={messages}
+            input={input}
+            setInput={setInput}
+            onSend={onSend}
+            suggestions={FAQ_SUGGESTIONS}
+          />
         ) : (
           <div className="messaging-empty" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
             <p>Select a conversation to start messaging</p>
@@ -198,5 +231,3 @@ export default function Messaging() {
     </div>
   );
 }
-
-

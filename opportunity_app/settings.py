@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+import sys
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env')
@@ -48,32 +49,31 @@ TEMPLATES = [{
             'django.template.context_processors.request',
             'django.contrib.auth.context_processors.auth',
             'django.contrib.messages.context_processors.messages',
+            'pages.context_processors.organization_unread_messages',
         ],
     },
 }]
 WSGI_APPLICATION = 'opportunity_app.wsgi.application'
 
-if os.getenv('DB_ENGINE', 'sqlite').lower() == 'postgresql':
+
+if 'test' in sys.argv:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('DB_NAME','opportunity'),
-            'USER': os.getenv('DB_USER','oppo_app'),
-            'PASSWORD': os.getenv('DB_PASSWORD','CSCI340Fall2025'),
-            'HOST': os.getenv('DB_HOST','34.16.174.60'),
-            'PORT': int(os.getenv('DB_PORT','5432')),
-            'CONN_MAX_AGE': 60,
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': str(BASE_DIR / 'test_db.sqlite3'),
         }
     }
 else:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-            'TEST': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': ':memory:',
-            },
+
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME', 'opportunity'),
+            'USER': os.getenv('DB_USER', 'oppo_app'),
+            'PASSWORD': os.getenv('DB_PASSWORD', 'CSCI340Fall2025'),
+            'HOST': os.getenv('DB_HOST', '34.16.174.60'),
+            'PORT': int(os.getenv('DB_PORT', '5432')),
+            'CONN_MAX_AGE': 60,
         }
     }
 
@@ -98,13 +98,21 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'screen1'
+LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
-# CORS Settings
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-]
 
-CORS_ALLOW_CREDENTIALS = True
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.getenv('EMAIL_HOST', '')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@opportunityapp.local')
+
+# Keep reset windows short for account takeover risk reduction.
+PASSWORD_RESET_TIMEOUT = int(os.getenv('PASSWORD_RESET_TIMEOUT', '3600'))
+
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG

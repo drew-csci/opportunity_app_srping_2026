@@ -4,62 +4,141 @@ export default function ChatWindow({ conversation, messages, messageListEndRef }
     return conversation.other_user?.display_name || 'Unknown';
   };
 
-  const formatTime = (timestamp) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+
+export default function ChatWindow({
+  organization,
+  messages,
+  onSendMessage,
+  suggestions = [],
+}) {
+  const [input, setInput] = useState("");
+
+  function handleSend() {
+    const text = input.trim();
+    if (!text) return;
+    onSendMessage(text);
+    setInput("");
+  }
+
+  function bubbleStyle(sender) {
+    const isMe = sender === "volunteer";
+    return {
+      maxWidth: "70%",
+      padding: 10,
+      borderRadius: 12,
+      marginBottom: 8,
+      alignSelf: isMe ? "flex-end" : "flex-start",
+      background: isMe ? "#e8f0ff" : "#f2f2f2",
+    };
+  }
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: '1px solid #ddd' }}>
-      <div style={{ padding: 15, borderBottom: '1px solid #eee', fontWeight: 700, backgroundColor: '#f9f9f9' }}>
-        {getOtherUserName()}
+
+    <div
+      style={{
+        flex: 1,
+        border: "1px solid #ddd",
+        borderRadius: 10,
+        overflow: "hidden",
+        padding: 12,
+      }}
+    >
+      <div
+        style={{
+          fontWeight: "bold",
+          marginBottom: 10,
+          borderBottom: "1px solid #eee",
+          paddingBottom: 10,
+        }}
+      >
+        Chat with: {organization}
       </div>
 
       <div
         aria-label="chat-messages"
         style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: 15,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 12,
-          background: '#fff',
+
+          border: "1px solid #eee",
+          borderRadius: 10,
+          padding: 12,
+          height: 320,
+          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+          background: "white",
         }}
       >
-        {messages && messages.length > 0 ? (
-          messages.map((message) => (
-            <div
-              key={message.id}
+        {messages.map((message) => (
+          <div key={message.id} style={bubbleStyle(message.sender_type)}>
+            <div style={{ fontSize: 12, color: "#555" }}>
+              {message.sender_type}
+            </div>
+            <div>{message.content}</div>
+            {message.created_at && (
+              <div style={{ fontSize: 11, color: "#999" }}>
+                {new Date(message.created_at).toLocaleString()}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginTop: 12 }}>
+        <div style={{ fontWeight: "bold", marginBottom: 6 }}>
+          AI-assisted FAQ suggestions
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {suggestions.map((s, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => setInput(s)}
               style={{
-                alignSelf: message.sender.id === conversation?.volunteer?.id ? 'flex-end' : 'flex-start',
-                maxWidth: '70%',
+                border: "1px solid #ddd",
+                borderRadius: 999,
+                padding: "8px 12px",
+                cursor: "pointer",
+                background: "white",
               }}
             >
-              <div
-                style={{
-                  background: message.sender.id === conversation?.volunteer?.id ? '#007bff' : '#e9ecef',
-                  color: message.sender.id === conversation?.volunteer?.id ? 'white' : 'black',
-                  borderRadius: 10,
-                  padding: '10px 12px',
-                  wordWrap: 'break-word',
-                }}
-              >
-                {message.content}
-              </div>
-              <small style={{ display: 'block', marginTop: '4px', color: '#999', textAlign: message.sender.id === conversation?.volunteer?.id ? 'right' : 'left' }}>
-                {formatTime(message.timestamp)}
-              </small>
-            </div>
-          ))
-        ) : (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: '#999' }}>
-            No messages yet. Start the conversation!
-          </div>
-        )}
-        <div ref={messageListEndRef} />
+              {s}
+            </button>
+          ))}
+          {suggestions.length === 0 && (
+            <span style={{ color: "#777", fontSize: 13 }}>No suggestions</span>
+          )}
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          marginTop: 12,
+          paddingTop: 10,
+          borderTop: "1px solid #eee",
+        }}
+      >
+        <input
+          aria-label="message-input"
+          value={input}
+          onChange={(event) => setInput(event.target.value)}
+          placeholder="Type a message..."
+          style={{
+            flex: 1,
+            padding: 10,
+            borderRadius: 10,
+            border: "1px solid #ddd",
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") handleSend();
+          }}
+        />
+        <button type="button" onClick={handleSend}>
+          Send
+        </button>
       </div>
     </div>
   );
+ }
 }
-

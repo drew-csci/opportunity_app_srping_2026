@@ -1,0 +1,386 @@
+{% extends 'base.html' %}
+
+{% block title %}Organizations I Follow{% endblock %}
+
+{% block content %}
+<div class="followed-orgs-container">
+    <div class="page-header">
+        <h1>🏢 Organizations I Follow</h1>
+        <p class="subtitle">Stay updated with opportunities from your favorite organizations</p>
+    </div>
+
+    {% if follows %}
+    <div class="organizations-grid">
+        {% for follow in follows %}
+        <div class="org-card">
+            <div class="org-card-header">
+                <div class="org-card-avatar">
+                    {{ follow.organization.display_name|first|upper }}
+                </div>
+                <div class="org-card-info">
+                    <h3>{{ follow.organization.display_name }}</h3>
+                    <p class="org-email">{{ follow.organization.email }}</p>
+                </div>
+            </div>
+
+            <p class="follow-date">Following since {{ follow.created_at|date:"M d, Y" }}</p>
+
+            <div class="org-stats">
+                <div class="stat">
+                    <span class="stat-label">Opportunities</span>
+                    <span class="stat-value">
+                        {{ follow.organization.opportunities.all|length|default:0 }}
+                    </span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Followers</span>
+                    <span class="stat-value">
+                        {{ follow.organization.followers.all|length }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="org-actions">
+                <a href="{% url 'organization_profile' follow.organization.id %}" class="btn btn-primary">
+                    View Profile
+                </a>
+                <button class="btn btn-secondary unfollow-btn" data-org-id="{{ follow.organization.id }}">
+                    Unfollow
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <h2>You're not following any organizations yet</h2>
+        <p>Explore organizations and follow them to stay updated on new opportunities.</p>
+        <a href="{% url 'screen1' %}" class="btn btn-primary btn-large">Explore Opportunities</a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.followed-orgs-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.page-header h1 {
+    margin: 0 0 0.5rem 0;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.subtitle {
+    margin: 0;
+    color: #64748b;
+    font-size: 1rem;
+}
+
+/* Organizations Grid */
+.organizations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.org-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+}
+
+.org-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    transform: translateY(-4px);
+}
+
+.org-card-header {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    align-items: flex-start;
+}
+
+.org-card-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.org-card-info {
+    flex: 1;
+}
+
+.org-card-info h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.org-email {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.follow-date {
+    margin: 0 0 1rem 0;
+    font-size: 0.85rem;
+    color: #94a3b8;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+/* Stats */
+.org-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 8px;
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-top: 0.25rem;
+}
+
+/* Actions */
+.org-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-grow: 1;
+    align-items: flex-end;
+}
+
+.btn {
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    flex: 1;
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #5568d3;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-secondary {
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+}
+
+.btn-secondary:hover {
+    background: #e2e8f0;
+    border-color: #94a3b8;
+}
+
+.btn-large {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    width: fit-content;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 16px;
+    border: 2px dashed #cbd5e1;
+}
+
+.empty-icon {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+    color: #0f172a;
+}
+
+.empty-state p {
+    margin: 0 0 1.5rem 0;
+    color: #64748b;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .followed-orgs-container {
+        padding: 1rem;
+    }
+
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .organizations-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .org-actions {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+    }
+
+    .org-stats {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .empty-state {
+        padding: 2rem 1rem;
+    }
+
+    .empty-icon {
+        font-size: 2.5rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const unfollowBtns = document.querySelectorAll('.unfollow-btn');
+    
+    unfollowBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!confirm('Are you sure you want to unfollow this organization?')) {
+                return;
+            }
+            
+            const orgId = this.dataset.orgId;
+            const url = `/organization/${orgId}/unfollow/`;
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remove the card with animation
+                    const card = btn.closest('.org-card');
+                    card.style.animation = 'fadeOut 0.3s ease';
+                    setTimeout(() => {
+                        card.remove();
+                        // If no more cards, reload page to show empty state
+                        if (document.querySelectorAll('.org-card').length === 0) {
+                            location.reload();
+                        }
+                    }, 300);
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to unfollow'));
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('An error occurred. Please try again.');
+            });
+        });
+    });
+});
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Add fadeOut animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes fadeOut {
+        from {
+            opacity: 1;
+            transform: scale(1);
+        }
+        to {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

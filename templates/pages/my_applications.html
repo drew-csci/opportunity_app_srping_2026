@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="dash-card">
+    <h1>My Applications</h1> 
+
+    {% if applications %}
+      <div class="application-list">
+        {% for application in applications %}
+          <article class="item-card">
+            <h2>{{ application.opportunity.title }}</h2>
+            <p class="muted">Applied {{ application.applied_date|date:"F j, Y" }} • {{ application.get_status_display }}</p>
+            <div class="button-row">
+              <button type="button" class="btn open-application-popup"
+                data-title="{{ application.opportunity.title|escapejs }}"
+                data-status="{{ application.get_status_display|escapejs }}"
+                data-description="{{ application.opportunity.description|escapejs }}"
+                data-message="{{ application.message|escapejs }}"
+              >View Tracking</button>
+              <a href="{% url 'opportunity_detail' application.opportunity.id %}" class="btn">Opportunity Info</a>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+
+      <div id="application-modal" class="modal" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+          <button id="application-modal-close" class="modal-close" aria-label="Close">×</button>
+          <h2 id="modal-title">Application tracking</h2>
+          <p id="modal-status" class="muted"></p>
+          <h3>Opportunity</h3>
+          <p id="modal-description"></p>
+          <h3>Application message</h3>
+          <p id="modal-message"></p>
+          <div class="button-row">
+            <button type="button" class="btn" id="application-modal-close-secondary">Close</button>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <p>No current applications.</p>
+    {% endif %}
+  </section>
+
+  <script> // JavaScript to handle opening and closing the application details modal, as well as populating the modal with the relevant application information when a user clicks on the "View Tracking" button for an application.
+    const modal = document.getElementById('application-modal');
+    const openButtons = document.querySelectorAll('.open-application-popup');
+    const closeButton = document.getElementById('application-modal-close');
+    const closeSecondary = document.getElementById('application-modal-close-secondary');
+    const modalTitle = document.getElementById('modal-title');
+    const modalStatus = document.getElementById('modal-status');
+    const modalDescription = document.getElementById('modal-description');
+    const modalMessage = document.getElementById('modal-message');
+
+    function closeModal() { 
+      modal.classList.remove('is-open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+
+    function openModal(event) { // When the "View Tracking" button is clicked, this function retrieves the relevant application information from the button's data attributes and populates the modal with that information before displaying it to the user.
+      const button = event.currentTarget;
+      modalTitle.textContent = button.getAttribute('data-title');
+      modalStatus.textContent = 'Status: ' + button.getAttribute('data-status');
+      modalDescription.textContent = button.getAttribute('data-description');
+      modalMessage.textContent = button.getAttribute('data-message') || 'No application details entered yet.';
+      modal.classList.add('is-open');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+
+    openButtons.forEach(button => {
+      button.addEventListener('click', openModal);
+    });
+
+    if (closeButton) {
+      closeButton.addEventListener('click', closeModal);
+    }
+
+    if (closeSecondary) {
+      closeSecondary.addEventListener('click', closeModal);
+    }
+
+    modal.addEventListener('click', function(event) {
+      if (event.target === modal) {
+        closeModal();
+      }
+    });
+  </script>
+{% endblock %}

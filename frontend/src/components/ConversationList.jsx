@@ -36,8 +36,22 @@ export default function ConversationList({
   };
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: 10, borderBottom: '1px solid #eee', fontWeight: 700 }}>
+
+    <div
+      style={{
+        width: 280,
+        border: "1px solid #ddd",
+        borderRadius: 10,
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          padding: 10,
+          borderBottom: "1px solid #eee",
+          fontWeight: 700,
+        }}
+      >
         Conversations
         <button
           onClick={handleShowCreateForm}
@@ -56,33 +70,40 @@ export default function ConversationList({
         </button>
       </div>
 
-      {showCreateForm && (
-        <div style={{ padding: 10, borderBottom: '1px solid #eee', maxHeight: '200px', overflowY: 'auto' }}>
-          {loadingOrgs ? (
-            <p style={{ margin: 0 }}>Loading organizations...</p>
-          ) : organizations.length === 0 ? (
-            <p style={{ margin: 0, color: '#666' }}>No organizations available</p>
-          ) : (
-            organizations.map((org) => (
-              <div
-                key={org.id}
-                onClick={() => handleSelectOrganization(org.id)}
-                style={{
-                  padding: '8px',
-                  margin: '4px 0',
-                  backgroundColor: '#f9f9f9',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  border: '1px solid #ddd',
-                  fontSize: '12px',
-                }}
-              >
-                <div style={{ fontWeight: 600 }}>{org.display_name}</div>
-                <div style={{ color: '#666', fontSize: '10px' }}>{org.email}</div>
+
+      {conversations.length === 0 ? (
+        <div style={{ padding: 12, color: "#666" }}>No conversations</div>
+      ) : (
+        conversations.map((conversation) => (
+          <button
+            key={conversation.id}
+            type="button"
+            onClick={() => onSelect(conversation.id)}
+            style={{
+              width: "100%",
+              textAlign: "left",
+              padding: 10,
+              border: "none",
+              borderBottom: "1px solid #f1f1f1",
+              background: activeId === conversation.id ? "#f5f8ff" : "white",
+              cursor: "pointer",
+            }}
+          >
+            <div style={{ fontWeight: 600 }}>{conversation.organization_name}</div>
+
+            {conversation.volunteer_name && (
+              <div style={{ fontSize: 12, color: "#666" }}>
+                {conversation.volunteer_name}
               </div>
-            ))
-          )}
-        </div>
+            )}
+
+            {conversation.last_message_at && (
+              <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
+                {new Date(conversation.last_message_at).toLocaleString()}
+              </div>
+            )}
+          </button>
+        ))
       )}
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -121,4 +142,3 @@ export default function ConversationList({
     </div>
   );
 }
-
