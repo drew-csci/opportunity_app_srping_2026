@@ -1,3 +1,6 @@
+/* Import for the Poppins font family from Google Fonts. */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
 * { box-sizing: border-box; }
 body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#f7f7fb; color:#111; }
 .container { max-width: 960px; margin: 0 auto; padding: 1.25rem; }
@@ -21,8 +24,20 @@ fieldset.form-field { border:1px solid #e5e7eb; border-radius:.6rem; padding:.75
 .btn:hover { filter:brightness(1.05); }
 .muted { color:#64748b; }
 .error { color:#b91c1c; font-size:.9rem; margin-top:.25rem; }
+.auth-links { display:flex; gap:1rem; margin-top:1rem; }
 .messages { list-style:none; padding:0; }
 .messages li { background:#ecfeff; border:1px solid #22d3ee; color:#0e7490; padding:.6rem .9rem; border-radius:.5rem; margin:.5rem 0; }
+.dashboard-shell { margin: 0 auto; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); margin-top: -1.25rem; padding: 2rem 1.25rem 2.5rem; font-family: "Poppins", Arial, sans-serif; background-color: lightblue; color: #333; }
+.dashboard-topbar { background: #ffffff; padding: 15px 40px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); display: flex; justify-content: space-between; align-items: center; border: 1px solid #e5e7eb; border-radius: 10px; border-bottom: none; margin-bottom: 16px; }
+.dashboard-title { font-size: 1.5em; font-weight: 600; color: #0056b3; }
+.dashboard-profile-icon { width: 50px; height: 50px; border-radius: 50%; background: #e9ecef; display: flex; align-items: center; justify-content: center; color: #495057; font-size: 1.2rem; cursor: pointer; border: none; transition: background-color 0.3s ease; }
+.dashboard-profile-icon:hover { background-color: #dde2e6; }
+.dashboard-panel { text-align: center; background: #fff; border-radius: 10px; padding: 50px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); width: 100%; max-width: 900px; margin: 0 auto 40px; border: 1px solid #e5e7eb; }
+.dashboard-section-title { font-weight: 600; font-size: 1.8em; margin-bottom: 10px; color: #222; }
+.dashboard-subtext { color: #666; font-size: 1.1em; margin-bottom: 24px; }
+.dashboard-button-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 24px; }
+.dashboard-btn { padding: 14px 12px; border: 1px solid #ddd; border-radius: 8px; background: #fff; font-size: 1rem; font-weight: 500; color: #333; text-decoration: none; transition: all 0.3s ease; }
+.dashboard-btn:hover { background-color: #007bff; color: #fff; border-color: #007bff; box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2); transform: translateY(-2px); }
 
 .modal {
   position: fixed;
@@ -136,3 +151,4 @@ fieldset.form-field { border:1px solid #e5e7eb; border-radius:.6rem; padding:.75
 .auth-links a:hover { text-decoration: underline; }
 .auth-note { margin-top: 1rem; color: var(--auth-muted); font-size: 0.82rem; border-top: 1px dashed #d6deee; padding-top: 0.8rem; }
 @media (max-width: 600px) { .auth-card { padding: 1.25rem; border-radius: 12px; } .auth-links { flex-direction: column; align-items: flex-start; } }
+

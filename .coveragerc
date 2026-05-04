@@ -1,0 +1,38 @@
+[run]
+# Measure coverage for these Django apps
+source =
+    pages
+    accounts
+    opportunity_app
+
+# Skip files that don't need coverage
+omit =
+    */migrations/*
+    */tests.py
+    */test_settings.py
+    */settings_test.py
+    */manage.py
+    */wsgi.py
+    */asgi.py
+    */__pycache__/*
+    */venv/*
+    frontend/*
+
+[report]
+# Fail if coverage drops below this percentage
+fail_under = 70
+
+# Show lines that are missing coverage
+show_missing = True
+
+# Exclude common patterns from coverage reporting
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if __name__ == .__main__
+    raise NotImplementedError
+    pass
+    except ImportError
+
+[html]
+directory = htmlcov

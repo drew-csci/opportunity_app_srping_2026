@@ -1,19 +1,58 @@
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import ChatWindow from "../ChatWindow";
 
 describe("ChatWindow (unit)", () => {
-  it("sends a new message when clicking send", async () => {
-    const user = userEvent.setup();
-    const onSendMessage = vi.fn();
+  it("renders conversation header with organization name", () => {
+    const conversation = {
+      id: 1,
+      other_user: { display_name: "Red Cross" },
+      volunteer: { id: 123 },
+    };
+    const messages = [];
 
-    render(<ChatWindow organization="Red Cross" messages={[]} onSendMessage={onSendMessage} />);
+    render(
+      <ChatWindow
+        conversation={conversation}
+        messages={messages}
+        messageListEndRef={{ current: null }}
+      />
+    );
 
-    await user.type(screen.getByLabelText("message-input"), "What are your hours?");
-    await user.click(screen.getByRole("button", { name: "Send" }));
+    expect(screen.getByText("Red Cross")).toBeInTheDocument();
+  });
 
-    expect(onSendMessage).toHaveBeenCalledWith("What are your hours?");
+  it("renders messages correctly", () => {
+    const conversation = {
+      id: 1,
+      other_user: { display_name: "Red Cross" },
+      volunteer: { id: 123 },
+    };
+    const messages = [
+      {
+        id: 1,
+        content: "Hello",
+        timestamp: new Date().toISOString(),
+        sender: { id: 123 },
+      },
+      {
+        id: 2,
+        content: "Hi there",
+        timestamp: new Date().toISOString(),
+        sender: { id: 456 },
+      },
+    ];
+
+    render(
+      <ChatWindow
+        conversation={conversation}
+        messages={messages}
+        messageListEndRef={{ current: null }}
+      />
+    );
+
+    expect(screen.getByText("Hello")).toBeInTheDocument();
+    expect(screen.getByText("Hi there")).toBeInTheDocument();
   });
 });
 
