@@ -17,3 +17,7 @@ env/
 .env
 .env
 .env
+# Database files
+*.sqlite3
+# Static files
+staticfiles/

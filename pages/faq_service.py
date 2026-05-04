@@ -21,29 +21,29 @@ class FAQService:
     # Sample FAQ database - in production, this would come from a database
     SAMPLE_FAQS = [
         {
-            'category': 'hours',
-            'content': 'Our organization is open Monday through Friday, 9:00 AM to 5:00 PM. We also have extended hours on weekends for special events.',
-            'keywords': ['hours', 'time', 'when', 'open', 'schedule'],
+            'category': 'opportunities',
+            'content': 'We offer various volunteering opportunities including tutoring, community service, environmental projects, and skill-building workshops. Check our dashboard for current openings.',
+            'keywords': ['opportunities', 'volunteer', 'jobs', 'positions', 'available'],
         },
         {
-            'category': 'location',
-            'content': 'We are located at 123 Main Street, Downtown. Parking is available in the adjacent lot.',
-            'keywords': ['location', 'address', 'where', 'place'],
+            'category': 'requirements',
+            'content': 'Most opportunities require students to be enrolled in high school or university. Some roles may have age restrictions or require background checks. Check individual opportunity descriptions for specific requirements.',
+            'keywords': ['requirements', 'qualifications', 'eligible', 'age', 'background'],
         },
         {
-            'category': 'volunteer_requirements',
-            'content': 'Volunteers must be at least 18 years old and pass a background check. Training is provided.',
-            'keywords': ['requirement', 'age', 'qualification', 'background', 'training'],
+            'category': 'application',
+            'content': 'To apply for an opportunity, create an account, browse available positions, and submit your application through the platform. Organizations will review and contact you directly.',
+            'keywords': ['apply', 'application', 'how to', 'submit', 'process'],
         },
         {
             'category': 'contact',
-            'content': 'You can reach us at (555) 123-4567 or email us at info@organization.org',
-            'keywords': ['contact', 'phone', 'email', 'reach', 'get in touch'],
+            'content': 'You can contact organizations directly through our messaging system once you apply. For platform support, email support@opportunityapp.org.',
+            'keywords': ['contact', 'reach', 'email', 'support', 'help'],
         },
         {
             'category': 'benefits',
-            'content': 'Volunteers receive free training, networking opportunities, and a certificate of service.',
-            'keywords': ['benefit', 'offer', 'reward', 'advantage', 'perk'],
+            'content': 'Volunteering helps build your resume, develop new skills, network with professionals, and contribute to your community. Many opportunities provide certificates of completion.',
+            'keywords': ['benefits', 'why', 'advantages', 'resume', 'skills'],
         },
     ]
 
