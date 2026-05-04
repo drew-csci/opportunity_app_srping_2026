@@ -6,6 +6,10 @@ import sys
 
 def main():
     """Run administrative tasks."""
+    # (Note: This line was used to run the tests on my end due to lack of perms. Not needed for final
+    # project, but kept here as comment for future reference): 
+    # os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'opportunity_app.test_settings_local')
+    
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'opportunity_app.settings')
     try:
         from django.core.management import execute_from_command_line
