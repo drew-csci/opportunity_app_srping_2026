@@ -95,6 +95,7 @@ function normalizeMsgs(msgs, conversation_id) {
 }
 
 export default function Messaging() {
+
   const volunteerName = "Tin Tin Do";
 
   const [conversations, setConversations] = useState([]);
@@ -222,8 +223,8 @@ export default function Messaging() {
             suggestions={FAQ_SUGGESTIONS}
           />
         ) : (
-          <div style={{ flex: 1, border: "1px solid #ddd", borderRadius: 10, padding: 12 }}>
-            Select a conversation to start messaging.
+          <div className="messaging-empty" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <p>Select a conversation to start messaging</p>
           </div>
         )}
       </div>

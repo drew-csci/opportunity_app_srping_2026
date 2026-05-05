@@ -14,7 +14,7 @@ from django.utils import timezone
 from pages.models import Notification, Opportunity, StudentOpportunity
 
 from .forms import VolunteerProfileForm
-from .models import OrganizationFollow, VolunteerExperience
+from .models import Application, OrganizationFollow, VolunteerExperience
 
 User = get_user_model()
 
@@ -361,9 +361,6 @@ class OrganizationApprovalTest(TestCase):
         self.assertEqual(notification.recipient, self.student)
         self.assertEqual(notification.notification_type, 'completion_approved')
         self.assertEqual(Notification.objects.filter(recipient=self.student).count(), 1)
-from .models import VolunteerExperience, OrganizationFollow, Opportunity, Application
-
-User = get_user_model()
 
     def test_organization_can_deny_pending_opportunity(self):
         """Test that an organization can deny a pending opportunity."""
@@ -812,6 +809,78 @@ class EndToEndWorkflowTest(TestCase):
         self.assertEqual(refreshed.date_pending, pending_date)
         self.assertEqual(refreshed.date_completed, completed_date)
 
+# Happy path Unit Test for loading a user's specific dashboard view based on their user type, also testing if Dashboard
+# opens after login.
+class DashboardHappyPathTests(TestCase):
+    # Sets up mock user account, which in this case, is of the organization user type.
+    def setUp(self):
+        self.User = get_user_model()
+        self.user = self.User.objects.create_user(
+            email="org@example.com",
+            username="org@example.com",
+            password="TestPass123!",
+            user_type="organization",
+            first_name="Org",
+            last_name="Owner",
+        )
+
+    # Tests the above credentials to see if, after implementing them, they lead to the correct dashboard page
+    # meant for the given user type.
+    def test_dashboard_renders_for_logged_in_user(self):
+        self.client.login(username=self.user.email, password="TestPass123!")
+        response = self.client.get(reverse("dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Organization Dashboard")
+        self.assertContains(response, self.user.display_name)
+
+# Simple edge case test that attempts to see if an anonymous user (not logged in) can access the dashboard, 
+# which should not be allowed and should redirect to login page instead by default.
+class DashboardEdgeCaseTests(TestCase):
+    # Edge case: anonymous users should not access dashboard directly.
+    def test_dashboard_redirects_anonymous_user_to_login(self):
+        response = self.client.get(reverse("dashboard"))
+        expected_login_url = f"{reverse('login')}?next={reverse('dashboard')}"
+        self.assertRedirects(response, expected_login_url)
+
+# An integration test that tests the whole flow of the pathing that the logging-in system partakes in, testing
+# multiple methods that contribute towards it to ensure that everything works as intended (incorporating the
+# first unit test from above as well as something else into one big test).
+class AuthDashboardIntegrationTests(TestCase):
+    """
+    Integration test:
+    login view + auth backend + redirect logic + dashboard view/template
+    (Tests the entire flow of the pathing that we have been working on from the start, essentially).
+    """
+
+    # Mock user account is setup.
+    def setUp(self):
+        User = get_user_model()
+        self.password = "TestPass123!"
+        self.user = User.objects.create_user(
+            email="org_integration@example.com",
+            username="org_integration@example.com",
+            password=self.password,
+            user_type="organization",
+            first_name="Org",
+            last_name="Owner",
+        )
+
+    # Tests the login process, its redirect, and sees if the dashboard renders properly.
+    def test_login_redirects_and_renders_org_dashboard(self):
+        response = self.client.post(
+            reverse("login"),
+            {"username": self.user.email, "password": self.password},
+            follow=True,
+        )
+
+        # Final destination should be dashboard
+        self.assertEqual(response.request["PATH_INFO"], reverse("dashboard"))
+        self.assertEqual(response.status_code, 200)
+
+        # Confirms dashboard page rendered with expected personalized content
+        self.assertTemplateUsed(response, "pages/dashboard.html")
+        self.assertContains(response, "Organization Dashboard")
+        self.assertContains(response, self.user.display_name)
         
 """Volunteer Profile Test"""        
 class VolunteerProfileTests(TestCase):
@@ -899,9 +968,6 @@ class VolunteerProfileTests(TestCase):
         self.assertContains(response, 'Jane Doe')
         self.assertContains(response, 'jane.doe@example.com')
         self.assertContains(response, '555-9876')
-from django.test import TestCase, Client
-from django.contrib.auth import get_user_model
-from django.urls import reverse
 
 
 class OrganizationScreen1Tests(TestCase):
@@ -939,14 +1005,6 @@ class OrganizationScreen1Tests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Organization Dashboard")
 
-from django.utils import timezone
-from django.contrib.auth import get_user_model
-from accounts.models import User
-from .models import OrganizationFollow
-from .models import Opportunity, Application
-import json
-
-User = get_user_model()
 
 class ApplicationTrackingTests(TestCase): #$ Test case class for testing the application tracking functionality of the volunteer opportunity application
     def setUp(self):
@@ -1136,7 +1194,6 @@ class ApplicationTrackingTests(TestCase): #$ Test case class for testing the app
         self.assertEqual(app.status, Application.Status.PENDING)
         self.assertEqual(app.message, 'Final submission')
         self.assertContains(response, 'Application submitted')
-
 
         
 """Organization Follow/Unfollow Tests"""
@@ -2277,6 +2334,8 @@ class OrganizationInboxIntegrationTests(TestCase):
         self.assertEqual(org1_unread, 0)
         self.assertEqual(org2_unread, 1)
         self.assertEqual(org2_unread, 1)
+
+
 class OrganizationDashboardTest(TestCase):
     """Test suite for organization dashboard functionality."""
 
@@ -2600,4 +2659,3 @@ class OpportunityListingTest(TestCase):
         student_opp.save()
         
         self.assertEqual(student_opp.status, 'pending')
-

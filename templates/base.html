@@ -14,6 +14,7 @@
       <nav>
         <ul class="nav">
           {% if user.is_authenticated %}
+            <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
             {% if user.user_type == 'student' %}
             <li><a href="{% url 'screen1' %}">Opportunities</a></li>
             <li><a href="{% url 'followed_organizations' %}">My Organizations</a></li>
@@ -25,7 +26,6 @@
             {% endif %}
             <li><a href="{% url 'screen3' %}">Contact Us</a></li>
             <li><a href="{% url 'volunteer_profile' %}">My Profile</a></li>
-            {% endif %}
             <li class="divider"></li>
             <li class="muted">Hi, {{ user.display_name }}</li>
             <li><!-- <a href="{% url 'logout' %}">Log out</a> -->
@@ -37,7 +37,6 @@
           {% else %}
             <li><a href="{% url 'login' %}">Log in</a></li>
             <li><a href="{% url 'register' %}">Create account</a></li>
-            
           {% endif %}
         </ul>
       </nav>
