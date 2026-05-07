@@ -48,6 +48,14 @@ def student_achievements(request):
 
 
 @login_required
+def my_applications(request):
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
+        return redirect('screen1')
+    applications = Application.objects.filter(student=request.user).select_related('opportunity').order_by('-applied_date')
+    return render(request, 'pages/my_applications.html', {'applications': applications})
+
+
+@login_required
 def organization_applications(request):
     if not hasattr(request.user, 'user_type') or request.user.user_type != 'organization':
         return redirect('screen1')
