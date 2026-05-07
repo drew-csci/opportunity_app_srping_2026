@@ -13,22 +13,22 @@ class AchievementAdmin(admin.ModelAdmin):
 
 @admin.register(Opportunity)
 class OpportunityAdmin(admin.ModelAdmin):
-    list_display = ('title', 'organization', 'opportunity_type', 'is_active', 'created_at')
-    list_filter = ('is_active', 'opportunity_type', 'created_at', 'organization')
+    list_display = ('title', 'organization', 'opportunity_type', 'is_active', 'posted_date')
+    list_filter = ('is_active', 'opportunity_type', 'posted_date', 'organization')
     search_fields = ('title', 'description', 'organization__email')
-    readonly_fields = ('created_at', 'id')
+    readonly_fields = ('posted_date', 'id')
     fieldsets = (
         ('Basic Information', {
             'fields': ('title', 'description', 'organization')
         }),
         ('Details', {
-            'fields': ('cause', 'location', 'duration', 'skills_required', 'opportunity_type')
+            'fields': ('category', 'location', 'duration', 'required_skills', 'opportunity_type')
         }),
         ('Status', {
             'fields': ('is_active',)
         }),
         ('Timestamps', {
-            'fields': ('created_at',),
+            'fields': ('posted_date',),
             'classes': ('collapse',)
         }),
     )
@@ -36,23 +36,19 @@ class OpportunityAdmin(admin.ModelAdmin):
 
 @admin.register(StudentOpportunity)
 class StudentOpportunityAdmin(admin.ModelAdmin):
-    list_display = ('student', 'opportunity', 'status', 'date_joined', 'date_completed')
-    list_filter = ('status', 'date_joined', 'date_completed')
+    list_display = ('student', 'opportunity', 'status', 'created_at')
+    list_filter = ('status', 'created_at')
     search_fields = ('student__email', 'opportunity__title')
-    readonly_fields = ('date_joined', 'date_pending', 'id')
+    readonly_fields = ('created_at', 'date_pending', 'id')
     fieldsets = (
         ('Student & Opportunity', {
             'fields': ('student', 'opportunity')
         }),
         ('Status', {
-            'fields': ('status', 'date_completed', 'date_pending')
-        }),
-        ('Denial Information', {
-            'fields': ('denial_reason',),
-            'classes': ('collapse',)
+            'fields': ('status', 'date_pending')
         }),
         ('Dates', {
-            'fields': ('date_joined',),
+            'fields': ('created_at',),
             'classes': ('collapse',)
         }),
     )
@@ -60,19 +56,16 @@ class StudentOpportunityAdmin(admin.ModelAdmin):
 
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
-    list_display = ('recipient', 'notification_type', 'is_read', 'created_at')
-    list_filter = ('notification_type', 'is_read', 'created_at')
+    list_display = ('recipient', 'is_read', 'created_at')
+    list_filter = ('is_read', 'created_at')
     search_fields = ('recipient__email', 'message')
     readonly_fields = ('created_at', 'id')
     fieldsets = (
-        ('Recipient & Type', {
-            'fields': ('recipient', 'notification_type', 'is_read')
+        ('Recipient', {
+            'fields': ('recipient', 'is_read')
         }),
         ('Content', {
             'fields': ('message',)
-        }),
-        ('Related Opportunity', {
-            'fields': ('student_opportunity',)
         }),
         ('Timestamps', {
             'fields': ('created_at',),
@@ -81,10 +74,8 @@ class NotificationAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(Application) # Register the Application model with the admin site using a custom admin class to display relevant fields and allow filtering and searching of applications based on status, opportunity, and student email.
+@admin.register(Application)
 class ApplicationAdmin(admin.ModelAdmin):
     list_display = ('opportunity', 'student', 'status', 'applied_date', 'responded_date')
     list_filter = ('status', 'opportunity')
     search_fields = ('student__email', 'opportunity__title', 'message')
-
-
