@@ -74,10 +74,8 @@ class NotificationAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(Application) # Register the Application model with the admin site using a custom admin class to display relevant fields and allow filtering and searching of applications based on status, opportunity, and student email.
+@admin.register(Application)
 class ApplicationAdmin(admin.ModelAdmin):
     list_display = ('opportunity', 'student', 'status', 'applied_date', 'responded_date')
     list_filter = ('status', 'opportunity')
     search_fields = ('student__email', 'opportunity__title', 'message')
-
-
