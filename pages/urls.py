@@ -30,4 +30,5 @@ urlpatterns = [
     path('volunteer/sent-messages/<int:message_id>/', views.volunteer_sent_message_detail, name='volunteer_sent_message_detail'),
     path('student/dashboard/', views.student_dashboard, name='student_dashboard'),
     path('student/notifications/', views.student_notifications, name='student_notifications'),
+    path('my-applications/', views.my_applications, name='my_applications'),
 ]
