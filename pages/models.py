@@ -1,7 +1,8 @@
-from django.conf import settings
 from django.db import models
+from django.conf import settings
 from django.utils import timezone
 
+# Create your models here.
 class Achievement(models.Model):
     student = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -17,68 +18,101 @@ class Achievement(models.Model):
         return self.title
 
 
-class Opportunity(models.Model): # New model for volunteer opportunities
-    organization = models.ForeignKey(  # Foreign key to the User model to link each opportunity to a specific organization
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.CASCADE, # Delete all related opportunities if the organization is deleted
-        related_name='opportunities', # Allow reverse access to opportunities from the organization user model
-        limit_choices_to={'user_type': 'organization'} # Limit the choices in the admin interface to only users with user_type 'organization'
+
+class Opportunity(models.Model):
+    """Model for job/volunteer opportunities posted by organizations"""
+    OPPORTUNITY_TYPES = [
+        ('volunteer', 'Volunteer'),
+        ('internship', 'Internship'),
+        ('job', 'Job'),
+    ]
+
+    DURATION_CHOICES = [
+        ('one-time', 'One-time'),
+        ('recurring', 'Recurring'),
+    ]
+
+    organization = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='opportunities',
+        limit_choices_to={'user_type': 'organization'}
     )
-    title = models.CharField(max_length=200) 
+    title = models.CharField(max_length=200)
     description = models.TextField()
-    cause = models.CharField(max_length=200)
+    category = models.CharField(max_length=50)
+    required_skills = models.TextField(blank=True, default='')
+    opportunity_type = models.CharField(max_length=20, choices=OPPORTUNITY_TYPES, default='volunteer')
     location = models.CharField(max_length=200)
-    duration = models.CharField(max_length=200)
-    skills_required = models.TextField()
-    opportunity_type = models.CharField(max_length=200)
+    duration = models.CharField(max_length=20, choices=DURATION_CHOICES, default='one-time')
+    hours_per_week = models.IntegerField(null=True, blank=True)
+    application_deadline = models.DateField(null=True, blank=True)
+    posted_date = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['-posted_date']
+
+    def __str__(self):
+        return f"{self.title} - {self.organization.display_name}"
+
+
+class StudentOpportunity(models.Model):
+    """Tracks the relationship between a student and an opportunity, including completion status."""
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='student_opportunities',
+        limit_choices_to={'user_type': 'student'},
+    )
+    opportunity = models.ForeignKey(
+        Opportunity,
+        on_delete=models.CASCADE,
+        related_name='student_opportunities',
+    )
+    status = models.CharField(max_length=20, default='in_progress')
+    date_pending = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-created_at']
 
     def __str__(self):
-        return self.title
+        return f"{self.student.display_name} - {self.opportunity.title}"
 
 
-class Application(models.Model): # New model for student applications to volunteer opportunities
-    class Status(models.TextChoices):
-        DRAFT = 'draft', 'Draft'
-        PENDING = 'pending', 'Pending'
-        ACCEPTED = 'accepted', 'Accepted'
-        DENIED = 'denied', 'Denied'
+class Application(models.Model):
+    """Model for student applications to opportunities"""
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('declined', 'Declined'),
+    ]
 
-    student = models.ForeignKey( # Foreign key to the User model to link each application to a specific student
+    student = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='applications',
-        limit_choices_to={'user_type': 'student'}
+        limit_choices_to={'user_type': 'student'},
     )
-    opportunity = models.ForeignKey( # Foreign key to the Opportunity model to link each application to a specific volunteer opportunity
+    opportunity = models.ForeignKey(
         Opportunity,
         on_delete=models.CASCADE,
-        related_name='applications'
+        related_name='applications',
     )
-    status = models.CharField( # Status field to track the application status with predefined choices
-        max_length=20,
-        choices=Status.choices,
-        default=Status.DRAFT
-    )
-    applied_date = models.DateTimeField(auto_now_add=True) # Timestamp when the application is created
-    responded_date = models.DateTimeField(null=True, blank=True) # Timestamp when the application is accepted or denied
-    message = models.TextField() # Optional message from the student explaining their interest in the opportunity
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    applied_date = models.DateTimeField(auto_now_add=True)
+    responded_date = models.DateTimeField(null=True, blank=True)
+    message = models.TextField(blank=True, help_text="Student's application message")
 
-    class Meta: # Order applications by most recent applied date first
+    class Meta:
         ordering = ['-applied_date']
+        unique_together = ('student', 'opportunity')
 
-    def save(self, *args, **kwargs): # Automatically set the responded_date when the status changes to accepted or denied
-        if self.status in (self.Status.ACCEPTED, self.Status.DENIED) and self.responded_date is None:  
-            self.responded_date = timezone.now()
-        super().save(*args, **kwargs) # Call the original save method to save the instance
+    def __str__(self):
+        return f"{self.student.display_name} - {self.opportunity.title} ({self.status})"
 
-    def __str__(self): # Return a string representation of the application showing the student's name, opportunity title, and current status
-        return f'{self.student.display_name} — {self.opportunity.title} ({self.get_status_display()})'
-    
+
 class VolunteerProfile(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -87,7 +121,7 @@ class VolunteerProfile(models.Model):
     )
     phone = models.CharField(max_length=20, blank=True)
     bio = models.TextField(blank=True)
-    skills = models.TextField(blank=True, help_text="Comma-separated list of skills")
+    skills = models.TextField(blank=True)
 
     def __str__(self):
         return f"{self.user.display_name}'s profile"
@@ -114,7 +148,8 @@ class VolunteerExperience(models.Model):
 
     def __str__(self):
         return f"{self.role} at {self.organization_name}"
-    
+
+
 class OrganizationFollow(models.Model):
     student = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -135,3 +170,105 @@ class OrganizationFollow(models.Model):
 
     def __str__(self):
         return f"{self.student} follows {self.organization}"
+
+
+class Message(models.Model):
+    """Model for messages sent by volunteers to organizations."""
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='sent_messages',
+        limit_choices_to={'user_type': 'student'},
+    )
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='received_messages',
+        limit_choices_to={'user_type': 'organization'},
+    )
+    subject = models.CharField(max_length=200)
+    content = models.TextField()
+    sent_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+    read_at = models.DateTimeField(null=True, blank=True)
+    reply_to = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='replies',
+        help_text="If this is a reply, reference the original message."
+    )
+
+    class Meta:
+        ordering = ['-sent_at']
+
+    def __str__(self):
+        return f"{self.sender.display_name} to {self.recipient.display_name}: {self.subject}"
+
+    @staticmethod
+    def get_unread_count(organization):
+        return Message.objects.filter(recipient=organization, is_read=False).count()
+
+    def mark_as_read(self):
+        if not self.is_read:
+            self.is_read = True
+            self.read_at = timezone.now()
+            self.save()
+
+    @property
+    def is_unread(self):
+        return not self.is_read
+
+    @property
+    def is_reply(self):
+        return self.reply_to is not None
+
+    def get_read_status(self):
+        if self.is_read and self.read_at:
+            return f"Read on {self.read_at.strftime('%B %d, %Y at %I:%M %p')}"
+        elif self.is_read:
+            return "Read"
+        else:
+            return "Unread"
+
+    def get_conversation_thread(self):
+        if self.reply_to:
+            original = self.reply_to
+            return original.get_conversation_thread()
+        else:
+            return list(self.replies.all().order_by('sent_at'))
+
+    def get_original_message(self):
+        if self.reply_to:
+            return self.reply_to.get_original_message()
+        return self
+
+    def has_replies(self):
+        return self.replies.exists()
+
+    @classmethod
+    def get_sent_messages_by_volunteer(cls, volunteer):
+        return cls.objects.filter(sender=volunteer).select_related('recipient').order_by('-sent_at')
+
+    @classmethod
+    def get_unread_sent_count(cls, volunteer):
+        return cls.objects.filter(sender=volunteer, is_read=False).count()
+
+
+class Notification(models.Model):
+    """Model for student notifications."""
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='notifications',
+    )
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Notification for {self.recipient}: {self.message[:50]}"

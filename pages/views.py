@@ -1,49 +1,25 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import get_user_model
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse, HttpResponseForbidden
 from django.utils import timezone
-from .models import Achievement, Opportunity, Application, VolunteerProfile, VolunteerExperience, OrganizationFollow
-from .forms import AchievementForm, ApplicationForm, VolunteerProfileForm, VolunteerExperienceForm
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
-
-User = get_user_model()
+from accounts.models import User
+from .models import Achievement, Opportunity, Application, StudentOpportunity, OrganizationFollow, Notification, VolunteerProfile, VolunteerExperience, Message
+from .forms import AchievementForm, OpportunityForm, VolunteerProfileForm, VolunteerExperienceForm, MessageReplyForm
 
 
 def welcome(request):
     return render(request, 'pages/welcome.html')
 
-
 @login_required
 def screen1(request):
     role = request.user.user_type.title() if hasattr(request.user, 'user_type') else 'User'
-
-    applications = [
-        {"student_name": "Alice Chen", "opportunity_title": "Food Bank", "date_applied": "Mar 10", "status": "Applied"},
-        {"student_name": "John Smith", "opportunity_title": "Tutoring", "date_applied": "Mar 11", "status": "Accepted"},
-        {"student_name": "Maria Lopez", "opportunity_title": "Park Clean", "date_applied": "Mar 12", "status": "Declined"},
-    ]
-
-    if request.method == "POST":
-        index = int(request.POST.get("index"))
-        action = request.POST.get("action")
-        if action == "accept":
-            applications[index]["status"] = "Accepted"
-        elif action == "decline":
-            applications[index]["status"] = "Declined"
-
-    return render(request, 'pages/screen1.html', {
-        'role': role,
-        'applications': applications
-    })
-
+    return render(request, 'pages/screen1.html', {'role': role})
 
 @login_required
 def screen2(request):
     role = request.user.user_type.title() if hasattr(request.user, 'user_type') else 'User'
     return render(request, 'pages/screen2.html', {'role': role})
-
 
 @login_required
 def screen3(request):
@@ -52,6 +28,7 @@ def screen3(request):
 
 
 @login_required
+<<<<<<< HEAD
 def opportunity_list(request):
     if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
         return redirect('screen1')
@@ -155,10 +132,11 @@ def remind_organization(request, application_id):
 
 
 @login_required
+=======
+>>>>>>> origin/main
 def student_achievements(request):
     if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
         return redirect('screen1')
-
     if request.method == 'POST':
         form = AchievementForm(request.POST)
         if form.is_valid():
@@ -168,7 +146,6 @@ def student_achievements(request):
             return redirect('student_achievements')
     else:
         form = AchievementForm()
-
     achievements = Achievement.objects.filter(student=request.user).order_by('-date_completed')
     return render(request, 'pages/student_achievements.html', {
         'achievements': achievements,
@@ -177,52 +154,172 @@ def student_achievements(request):
 
 
 @login_required
-def organization_applications(request): # View for organizations to see all applications submitted to their volunteer opportunities, excluding drafts, and allowing them to review and manage those applications
+def my_applications(request):
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
+        return redirect('screen1')
+    applications = Application.objects.filter(student=request.user).select_related('opportunity').order_by('-applied_date')
+    return render(request, 'pages/my_applications.html', {'applications': applications})
+
+
+@login_required
+def organization_applications(request):
     if not hasattr(request.user, 'user_type') or request.user.user_type != 'organization':
         return redirect('screen1')
-
     applications = Application.objects.filter(
         opportunity__organization=request.user
-    ).exclude(status=Application.Status.DRAFT).select_related('student', 'opportunity').order_by('-applied_date')
-
+    ).select_related('student', 'opportunity').order_by('-applied_date')
     return render(request, 'pages/organization_applications.html', {
         'applications': applications,
     })
 
 
 @login_required
-def review_application(request, application_id): # View for organizations to review and manage a specific application submitted to their volunteer opportunities
+def review_application(request, application_id):
     if not hasattr(request.user, 'user_type') or request.user.user_type != 'organization':
         return redirect('screen1')
-
-    application = get_object_or_404(
-        Application,
-        id=application_id,
-        opportunity__organization=request.user
-    )
-
+    application = get_object_or_404(Application, id=application_id, opportunity__organization=request.user)
     if request.method == 'POST':
         decision = request.POST.get('decision')
-        if decision in (Application.Status.ACCEPTED, Application.Status.DENIED):
+        if decision in ('accepted', 'declined'):
             application.status = decision
             if application.responded_date is None:
                 application.responded_date = timezone.now()
             application.save()
-            messages.success(request, f'Application status updated to {application.get_status_display()}.')
+            messages.success(request, f'Application status updated.')
             return redirect('organization_applications')
         messages.error(request, 'Please choose a valid decision.')
-
-    return render(request, 'pages/review_application.html', {
-        'application': application,
-    })
+    return render(request, 'pages/review_application.html', {'application': application})
 
 
 def faq(request):
     return render(request, 'pages/faq.html')
 
 
+@login_required
 def dashboard(request):
-    return render(request, 'pages/dashboard.html')
+    role = request.user.user_type.title() if hasattr(request.user, 'user_type') else 'User'
+    context = {'role': role}
+    if hasattr(request.user, 'user_type') and request.user.user_type == 'organization':
+        unread_count = Message.objects.filter(recipient=request.user, is_read=False).count()
+        context['unread_message_count'] = unread_count
+    return render(request, 'pages/dashboard.html', context)
+
+
+@login_required
+def student_dashboard(request):
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
+        return redirect('screen1')
+    completed_opportunities = StudentOpportunity.objects.filter(student=request.user, status='completed').select_related('opportunity', 'opportunity__organization')
+    in_progress_opportunities = StudentOpportunity.objects.filter(student=request.user, status='in_progress').select_related('opportunity', 'opportunity__organization')
+    pending_opportunities = StudentOpportunity.objects.filter(student=request.user, status='pending').select_related('opportunity', 'opportunity__organization')
+    context = {
+        'completed_opportunities': completed_opportunities,
+        'in_progress_opportunities': in_progress_opportunities,
+        'pending_opportunities': pending_opportunities,
+        'completed_count': completed_opportunities.count(),
+        'pending_count': pending_opportunities.count(),
+    }
+    return render(request, 'pages/student_dashboard.html', context)
+
+
+@login_required
+def mark_opportunity_pending(request, student_opportunity_id):
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
+        return HttpResponseForbidden("Only students can access this action.")
+    student_opportunity = get_object_or_404(StudentOpportunity, id=student_opportunity_id)
+    if student_opportunity.student != request.user:
+        return HttpResponseForbidden("You can only mark your own opportunities as pending.")
+    if student_opportunity.status != 'in_progress':
+        return redirect('student_dashboard')
+    if request.method == 'POST':
+        student_opportunity.status = 'pending'
+        student_opportunity.date_pending = timezone.now()
+        student_opportunity.save()
+        return redirect('student_dashboard')
+    return render(request, 'pages/mark_opportunity_pending.html', {'student_opportunity': student_opportunity})
+
+
+@login_required
+def organization_dashboard(request):
+    if request.user.user_type != 'organization':
+        return redirect('screen1')
+    recent_applications = Application.objects.filter(opportunity__organization=request.user).select_related('student', 'opportunity').order_by('-applied_date')[:10]
+    pending_count = Application.objects.filter(opportunity__organization=request.user, status='pending').count()
+    accepted_count = Application.objects.filter(opportunity__organization=request.user, status='accepted').count()
+    opportunities_count = Opportunity.objects.filter(organization=request.user, is_active=True).count()
+    context = {
+        'recent_applications': recent_applications,
+        'pending_count': pending_count,
+        'accepted_count': accepted_count,
+        'total_volunteers': accepted_count,
+        'opportunities_count': opportunities_count,
+    }
+    return render(request, 'pages/organization_dashboard.html', context)
+
+
+@login_required
+def applicant_profile(request, applicant_id):
+    if request.user.user_type != 'organization':
+        return redirect('screen1')
+    student = get_object_or_404(User, id=applicant_id, user_type='student')
+    achievements = student.achievements.all()
+    applications = Application.objects.filter(student=student, opportunity__organization=request.user).select_related('opportunity')
+    return render(request, 'pages/applicant_profile.html', {
+        'student': student, 'achievements': achievements, 'applications': applications,
+    })
+
+
+@login_required
+def accept_application(request, application_id):
+    application = get_object_or_404(Application, id=application_id)
+    if application.opportunity.organization != request.user:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    application.status = 'accepted'
+    application.responded_date = timezone.now()
+    application.save()
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True, 'status': 'accepted', 'message': f'{application.student.display_name} application accepted!'})
+    return redirect('applicant_profile', applicant_id=application.student.id)
+
+
+@login_required
+def decline_application(request, application_id):
+    application = get_object_or_404(Application, id=application_id)
+    if application.opportunity.organization != request.user:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    application.status = 'declined'
+    application.responded_date = timezone.now()
+    application.save()
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True, 'status': 'declined', 'message': f'{application.student.display_name} application declined.'})
+    return redirect('applicant_profile', applicant_id=application.student.id)
+
+
+@login_required
+def organization_opportunities(request):
+    if request.user.user_type != 'organization':
+        return redirect('screen1')
+    opportunities = Opportunity.objects.filter(organization=request.user).prefetch_related('applications')
+    return render(request, 'pages/organization_opportunities.html', {'opportunities': opportunities})
+
+
+@login_required
+def organization_post_opportunity(request):
+    if request.user.user_type != 'organization':
+        return redirect('screen1')
+    if request.method == 'POST':
+        form = OpportunityForm(request.POST)
+        if form.is_valid():
+            opportunity = form.save(commit=False)
+            opportunity.organization = request.user
+            opportunity.save()
+            messages.success(request, f'"{opportunity.title}" has been posted successfully.')
+            return redirect('organization_opportunities')
+        messages.error(request, 'Please correct the highlighted fields and try again.')
+    else:
+        form = OpportunityForm()
+    return render(request, 'pages/organization_post_opportunity.html', {'form': form})
+
 
 @login_required
 def volunteer_profile(request):
@@ -231,30 +328,22 @@ def volunteer_profile(request):
     except VolunteerProfile.DoesNotExist:
         return redirect('volunteer_profile_edit')
     experiences = VolunteerExperience.objects.filter(volunteer=request.user)
-    return render(request, 'pages/volunteer_profile_view.html', {
-        'profile': profile,
-        'experiences': experiences,
-    })
+    return render(request, 'pages/volunteer_profile_view.html', {'profile': profile, 'experiences': experiences})
+
 
 @login_required
 def organization_profile(request, org_id):
-    """Display an organization's profile with follow/unfollow button and opportunities."""
     organization = get_object_or_404(User, id=org_id, user_type='organization')
     is_following = False
-
+    unread_message_count = 0
     if request.user.user_type == 'student':
-        is_following = OrganizationFollow.objects.filter(
-            student=request.user,
-            organization=organization,
-        ).exists()
-
-    # TODO: Query opportunities when Opportunity model is added
-    opportunities = []
-
+        is_following = OrganizationFollow.objects.filter(student=request.user, organization=organization).exists()
+    elif request.user.user_type == 'organization' and request.user.id == org_id:
+        unread_message_count = Message.objects.filter(recipient=request.user, is_read=False).count()
+    opportunities = Opportunity.objects.filter(organization=organization, is_active=True)
     return render(request, 'pages/organization_profile.html', {
-        'organization': organization,
-        'is_following': is_following,
-        'opportunities': opportunities,
+        'organization': organization, 'is_following': is_following,
+        'opportunities': opportunities, 'unread_message_count': unread_message_count,
     })
 
 
@@ -275,18 +364,11 @@ def volunteer_profile_edit(request):
             return redirect('volunteer_profile')
     else:
         form = VolunteerProfileForm(initial={
-            'first_name': request.user.first_name,
-            'last_name': request.user.last_name,
-            'email': request.user.email,
-            'phone': profile.phone,
-            'bio': profile.bio,
-            'skills': profile.skills,
+            'first_name': request.user.first_name, 'last_name': request.user.last_name,
+            'email': request.user.email, 'phone': profile.phone, 'bio': profile.bio, 'skills': profile.skills,
         })
     experiences = VolunteerExperience.objects.filter(volunteer=request.user)
-    return render(request, 'pages/volunteer_profile_edit.html', {
-        'form': form,
-        'experiences': experiences,
-    })
+    return render(request, 'pages/volunteer_profile_edit.html', {'form': form, 'experiences': experiences})
 
 
 @login_required
@@ -294,13 +376,13 @@ def experience_add(request):
     if request.method == 'POST':
         form = VolunteerExperienceForm(request.POST)
         if form.is_valid():
-            experience = form.save(commit=False)
-            experience.volunteer = request.user
-            experience.save()
+            exp = form.save(commit=False)
+            exp.volunteer = request.user
+            exp.save()
             return redirect('volunteer_profile_edit')
     else:
         form = VolunteerExperienceForm()
-    return render(request, 'pages/volunteer_profile_edit.html', {'form': form})
+    return render(request, 'pages/experience_form.html', {'form': form})
 
 
 @login_required
@@ -313,10 +395,7 @@ def experience_edit(request, pk):
             return redirect('volunteer_profile_edit')
     else:
         form = VolunteerExperienceForm(instance=experience)
-    return render(request, 'pages/volunteer_profile_edit.html', {
-        'form': form,
-        'experience': experience,
-    })
+    return render(request, 'pages/experience_form.html', {'form': form})
 
 
 @login_required
@@ -326,64 +405,102 @@ def experience_delete(request, pk):
         experience.delete()
     return redirect('volunteer_profile_edit')
 
+
 @login_required
 def follow_organization(request, org_id):
+<<<<<<< HEAD
     """Follow an organization. Supports both regular POST and AJAX requests."""
+=======
+>>>>>>> origin/main
     if request.user.user_type != 'student':
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'error': 'Only students can follow organizations'}, status=403)
         return redirect('screen1')
-
     organization = get_object_or_404(User, id=org_id, user_type='organization')
-    follow_obj, created = OrganizationFollow.objects.get_or_create(
-        student=request.user,
-        organization=organization,
-    )
-    
+    OrganizationFollow.objects.get_or_create(student=request.user, organization=organization)
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({
-            'success': True,
-            'following': True,
-            'message': f'You are now following {organization.display_name}'
-        })
-    
+        return JsonResponse({'success': True, 'following': True, 'message': f'You are now following {organization.display_name}'})
     return redirect('organization_profile', org_id=org_id)
 
 
 @login_required
 def unfollow_organization(request, org_id):
-    """Unfollow an organization. Supports both regular POST and AJAX requests."""
     if request.user.user_type != 'student':
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'error': 'Only students can unfollow organizations'}, status=403)
         return redirect('screen1')
-
     organization = get_object_or_404(User, id=org_id, user_type='organization')
-    OrganizationFollow.objects.filter(
-        student=request.user,
-        organization=organization,
-    ).delete()
-    
+    OrganizationFollow.objects.filter(student=request.user, organization=organization).delete()
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({
-            'success': True,
-            'following': False,
-            'message': f'You unfollowed {organization.display_name}'
-        })
-    
+        return JsonResponse({'success': True, 'following': False, 'message': f'You unfollowed {organization.display_name}'})
     return redirect('organization_profile', org_id=org_id)
 
 
 @login_required
 def followed_organizations(request):
-    """Show all organizations the logged-in student follows."""
     if request.user.user_type != 'student':
         return redirect('screen1')
+    follows = OrganizationFollow.objects.filter(student=request.user).select_related('organization')
+    return render(request, 'pages/followed_organizations.html', {'follows': follows})
 
-    follows = OrganizationFollow.objects.filter(
-        student=request.user,
-    ).select_related('organization')
 
-    return render(request, 'pages/followed_organizations.html', {
-        'follows': follows,
-    })
+@login_required
+def organization_inbox(request):
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'organization':
+        return redirect('screen1')
+    inbox_messages = Message.objects.filter(recipient=request.user).select_related('sender').order_by('-sent_at')
+    return render(request, 'pages/organization_inbox.html', {'messages': inbox_messages})
+
+
+@login_required
+def message_detail(request, message_id):
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'organization':
+        return redirect('screen1')
+    message = get_object_or_404(Message, id=message_id, recipient=request.user)
+    message.mark_as_read()
+    replies = message.replies.all().select_related('sender', 'recipient').order_by('sent_at')
+    if request.method == 'POST':
+        form = MessageReplyForm(request.POST)
+        if form.is_valid():
+            try:
+                Message.objects.create(
+                    sender=request.user, recipient=message.sender,
+                    subject=f"Re: {message.subject}", content=form.cleaned_data['reply_content'],
+                    reply_to=message,
+                )
+                messages.success(request, 'Your reply has been sent successfully!')
+                return redirect('message_detail', message_id=message_id)
+            except Exception as e:
+                messages.error(request, f'There was an error sending your reply: {str(e)}')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, str(error))
+    else:
+        form = MessageReplyForm()
+    return render(request, 'pages/message_detail.html', {'message': message, 'replies': replies, 'form': form})
+
+
+@login_required
+def volunteer_sent_messages(request):
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
+        return redirect('screen1')
+    sent_messages = Message.objects.filter(sender=request.user).select_related('recipient').order_by('-sent_at')
+    return render(request, 'pages/volunteer_sent_messages.html', {'messages': sent_messages})
+
+
+@login_required
+def volunteer_sent_message_detail(request, message_id):
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
+        return redirect('screen1')
+    message = get_object_or_404(Message, id=message_id, sender=request.user)
+    replies = message.replies.all().select_related('sender', 'recipient').order_by('sent_at')
+    return render(request, 'pages/volunteer_sent_message_detail.html', {'message': message, 'replies': replies})
+
+
+@login_required
+def student_notifications(request):
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
+        return redirect('screen1')
+    notifications = Notification.objects.filter(recipient=request.user)
+    return render(request, 'pages/student_notifications.html', {'notifications': notifications})

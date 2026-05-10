@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row">
+    <div class="col-md-8 offset-md-2">
+      <div class="card border-success">
+        <div class="card-body">
+          <h4 class="card-title">Approve Opportunity Completion?</h4>
+          
+          <div class="alert alert-info" role="alert">
+            <strong>Student:</strong> {{ student_opportunity.student.display_name }}<br>
+            <strong>Opportunity:</strong> {{ student_opportunity.opportunity.title }}<br>
+            <strong>Submitted:</strong> {{ student_opportunity.date_pending|date:"F d, Y g:i A" }}
+          </div>
+
+          <div class="card bg-light mb-3">
+            <div class="card-body">
+              <h6 class="card-title">Opportunity Details</h6>
+              <p class="card-text">{{ student_opportunity.opportunity.description }}</p>
+            </div>
+          </div>
+
+          <p>
+            By approving this submission, you're confirming that <strong>{{ student_opportunity.student.display_name }}</strong> 
+            has successfully completed the <strong>{{ student_opportunity.opportunity.title }}</strong> opportunity.
+          </p>
+
+          <form method="post">
+            {% csrf_token %}
+            <div class="d-flex gap-2 justify-content-center">
+              <button type="submit" class="btn btn-success btn-lg">
+                <i class="bi bi-check-circle"></i> Approve Completion
+              </button>
+              <a href="{% url 'organization_dashboard' %}" class="btn btn-secondary btn-lg">
+                <i class="bi bi-x-circle"></i> Cancel
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
