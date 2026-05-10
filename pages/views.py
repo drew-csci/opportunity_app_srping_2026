@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
+from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 from accounts.models import User
 from .models import Achievement, Opportunity, Application, StudentOpportunity, OrganizationFollow, Notification, VolunteerProfile, VolunteerExperience, Message
@@ -28,7 +29,6 @@ def screen3(request):
 
 
 @login_required
-<<<<<<< HEAD
 def opportunity_list(request):
     if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
         return redirect('screen1')
@@ -132,8 +132,6 @@ def remind_organization(request, application_id):
 
 
 @login_required
-=======
->>>>>>> origin/main
 def student_achievements(request):
     if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
         return redirect('screen1')
@@ -151,14 +149,6 @@ def student_achievements(request):
         'achievements': achievements,
         'form': form,
     })
-
-
-@login_required
-def my_applications(request):
-    if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
-        return redirect('screen1')
-    applications = Application.objects.filter(student=request.user).select_related('opportunity').order_by('-applied_date')
-    return render(request, 'pages/my_applications.html', {'applications': applications})
 
 
 @login_required
@@ -408,10 +398,6 @@ def experience_delete(request, pk):
 
 @login_required
 def follow_organization(request, org_id):
-<<<<<<< HEAD
-    """Follow an organization. Supports both regular POST and AJAX requests."""
-=======
->>>>>>> origin/main
     if request.user.user_type != 'student':
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'error': 'Only students can follow organizations'}, status=403)
