@@ -14,6 +14,7 @@ urlpatterns = [
     path('applications/<int:application_id>/', views.application_detail, name='application_detail'),
     path('organization/applications/', views.organization_applications, name='organization_applications'),
     path('organization/applications/<int:application_id>/review/', views.review_application, name='review_application'),
+    path('applications/<int:application_id>/remind/', views.remind_organization, name='remind_organization'),
     path('faq/', views.faq, name='faq'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('volunteer/profile/', views.volunteer_profile, name='volunteer_profile'),

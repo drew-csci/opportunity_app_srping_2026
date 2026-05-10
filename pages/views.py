@@ -139,6 +139,22 @@ def application_detail(request, application_id): # View to display the details o
 
 
 @login_required
+@require_http_methods(['POST'])
+def remind_organization(request, application_id):
+    if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
+        return redirect('screen1')
+
+    application = get_object_or_404(Application, id=application_id, student=request.user)
+    if application.status != Application.Status.PENDING:
+        messages.error(request, 'Reminders can only be sent for applications that are still pending.')
+        return redirect('my_applications')
+
+    organization = application.opportunity.organization
+    messages.success(request, f'Reminder sent to {organization.display_name}.')
+    return redirect('my_applications')
+
+
+@login_required
 def student_achievements(request):
     if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
         return redirect('screen1')
@@ -312,7 +328,7 @@ def experience_delete(request, pk):
 
 @login_required
 def follow_organization(request, org_id):
-    """follow an organization. Supports both regular POST and AJAX requests."""
+    """Follow an organization. Supports both regular POST and AJAX requests."""
     if request.user.user_type != 'student':
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'error': 'Only students can follow organizations'}, status=403)

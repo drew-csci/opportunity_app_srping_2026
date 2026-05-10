@@ -4,11 +4,41 @@ import json
 from django.contrib.auth import get_user_model
 from django.test import TestCase, Client
 from django.urls import reverse
+from django.contrib.messages import get_messages
 
 from .forms import VolunteerProfileForm
 from .models import VolunteerExperience, OrganizationFollow, Opportunity, Application
 
 User = get_user_model()
+
+
+class SmokeTestCase(TestCase):
+    """Basic smoke tests for main page availability."""
+
+    def setUp(self):
+        self.client = Client()
+        self.student = User.objects.create_user(
+            email='student@test.com',
+            username='student@test.com',
+            password='testpass123',
+            user_type='student'
+        )
+
+    def test_main_pages_load(self):
+        """Verify the main public and dashboard pages load successfully."""
+        public_urls = [
+            reverse('welcome'),
+            reverse('faq'),
+            reverse('login'),
+        ]
+        for url in public_urls:
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+
+        self.client.force_login(self.student)
+        response = self.client.get(reverse('dashboard'))
+        self.assertEqual(response.status_code, 200)
+
 
 class VolunteerProfileTests(TestCase):
     def test_volunteer_profile_form_valid_data(self):
@@ -32,6 +62,20 @@ class VolunteerProfileTests(TestCase):
             'email': '',
             'phone': '555-1234',
             'bio': 'No email should fail validation.',
+            'skills': 'Tutoring',
+        })
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('email', form.errors)
+
+    def test_volunteer_profile_form_invalid_email_format(self):
+        """Negative test: Form rejects invalid email format."""
+        form = VolunteerProfileForm(data={
+            'first_name': 'Jane',
+            'last_name': 'Doe',
+            'email': 'invalid-email-format',  # Invalid email
+            'phone': '555-1234',
+            'bio': 'Valid bio',
             'skills': 'Tutoring',
         })
 
@@ -332,6 +376,43 @@ class ApplicationTrackingTests(TestCase): #$ Test case class for testing the app
         self.assertEqual(app.status, Application.Status.PENDING)
         self.assertEqual(app.message, 'Final submission')
         self.assertContains(response, 'Application submitted')
+
+    def test_remind_organization_for_pending_application(self):
+        self.client.force_login(self.student)
+        pending_application = Application.objects.create(
+            student=self.student,
+            opportunity=self.opportunity,
+            status=Application.Status.PENDING,
+            message='Reminder test message',
+        )
+        response = self.client.post(
+            reverse('remind_organization', args=[pending_application.id]),
+            follow=True
+        )
+        self.assertRedirects(response, reverse('my_applications'))
+        messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertTrue(any('Reminder sent to' in message for message in messages))
+
+    def test_remind_button_only_shown_for_pending_applications(self):
+        self.client.force_login(self.student)
+        pending_application = Application.objects.create(
+            student=self.student,
+            opportunity=self.opportunity,
+            status=Application.Status.PENDING,
+            message='Reminder button test',
+        )
+        response = self.client.get(reverse('my_applications'))
+        self.assertContains(response, 'Remind About Me')
+
+        pending_application.status = Application.Status.ACCEPTED
+        pending_application.save()
+        response = self.client.get(reverse('my_applications'))
+        self.assertNotContains(response, 'Remind About Me')
+
+        pending_application.status = Application.Status.DENIED
+        pending_application.save()
+        response = self.client.get(reverse('my_applications'))
+        self.assertNotContains(response, 'Remind About Me')
 
 
 class OrganizationFollowModelTests(TestCase):
@@ -753,3 +834,131 @@ class FollowOrganizationIntegrationTests(TestCase):
             OrganizationFollow.objects.filter(organization=self.organization).count(),
             2
         )
+
+
+class RegressionTests(TestCase):
+    """Regression tests for existing features to prevent breakage."""
+
+    def setUp(self):
+        self.client = Client()
+        self.student = User.objects.create_user(
+            email='student@test.com',
+            username='student@test.com',
+            password='testpass123',
+            user_type='student'
+        )
+        self.organization = User.objects.create_user(
+            email='org@test.com',
+            username='org@test.com',
+            password='testpass123',
+            user_type='organization'
+        )
+        self.opportunity = Opportunity.objects.create(
+            organization=self.organization,
+            title='Test Opportunity',
+            description='Test description',
+            cause='Community Service',
+            location='Test Location',
+            duration='2 hours',
+            skills_required='Communication',
+            opportunity_type='Volunteering',
+            is_active=True
+        )
+
+    def test_regression_dashboard_page_loads_with_applications(self):
+        """Regression test: Dashboard page loads correctly and shows applications."""
+        # Create an application for the student
+        application = Application.objects.create(
+            student=self.student,
+            opportunity=self.opportunity,
+            status=Application.Status.PENDING,
+            message='Test application message'
+        )
+
+        # Log in as student
+        self.client.force_login(self.student)
+
+        # Access dashboard
+        response = self.client.get(reverse('dashboard'))
+
+        # Verify page loads
+        self.assertEqual(response.status_code, 200)
+
+        # Verify page contains expected content
+        self.assertContains(response, 'Student Dashboard')
+        self.assertContains(response, 'Welcome to your Dashboard')
+        self.assertContains(response, 'Your Applications')
+
+
+    def test_integration_student_dashboard_access_and_content(self):
+        """Integration test: Student user logs in, accesses dashboard, and sees expected content."""
+        # Log in as the student user created in setUp
+        self.client.force_login(self.student)
+
+        # Request the dashboard page
+        response = self.client.get(reverse('dashboard'))
+
+        # Verify the page loads successfully
+        self.assertEqual(response.status_code, 200)
+
+        # Verify expected dashboard content is present
+        self.assertContains(response, 'Student Dashboard')
+        self.assertContains(response, 'Welcome to your Dashboard')
+        self.assertContains(response, 'Your Applications')
+
+
+class PerformanceLoadTests(TestCase):
+    """Performance and load tests for page response times."""
+
+    def setUp(self):
+        self.client = Client()
+        # Create multiple student users for load testing
+        self.students = []
+        for i in range(5):
+            student = User.objects.create_user(
+                email=f'student{i}@test.com',
+                username=f'student{i}@test.com',
+                password='testpass123',
+                user_type='student'
+            )
+            self.students.append(student)
+
+    def test_load_dashboard_multiple_students(self):
+        """Load test: Dashboard should handle multiple student requests successfully."""
+        response_times = []
+        
+        # Simulate requests from multiple students
+        for student in self.students:
+            self.client.force_login(student)
+            
+            # Make dashboard request
+            response = self.client.get(reverse('dashboard'))
+            
+            # Verify successful response
+            self.assertEqual(response.status_code, 200)
+            
+            # Verify expected content is present
+            self.assertContains(response, 'Your Applications')
+
+    def test_welcome_page_multiple_requests(self):
+        """Load test: Welcome page should handle multiple requests successfully."""
+        # Simulate multiple requests to the welcome/public page
+        for i in range(5):
+            response = self.client.get(reverse('welcome'))
+            
+            # Verify successful response
+            self.assertEqual(response.status_code, 200)
+            
+            # Verify page content
+            self.assertContains(response, 'Welcome')
+
+    def test_dashboard_rapid_consecutive_requests(self):
+        """Load test: Dashboard should handle rapid consecutive requests from same user."""
+        self.client.force_login(self.students[0])
+        
+        # Make 10 rapid requests
+        for i in range(10):
+            response = self.client.get(reverse('dashboard'))
+            
+            # Verify all requests succeed
+            self.assertEqual(response.status_code, 200)
