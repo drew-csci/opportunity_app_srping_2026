@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row mb-4">
+    <div class="col-md-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h1>My Student Dashboard</h1>
+          <p class="text-muted">Welcome, {{ request.user.display_name }}! Here are your opportunities.</p>
+        </div>
+        <a href="{% url 'student_notifications' %}" class="btn btn-outline-secondary">
+          <i class="bi bi-bell"></i> Notifications
+          {% if pending_count %}
+            <span class="badge bg-warning">{{ pending_count }}</span>
+          {% endif %}
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Completed Opportunities Section -->
+  <div class="row mb-5">
+    <div class="col-md-12">
+      <h2>Completed Opportunities
+        <span class="badge bg-success">{{ completed_count }}</span>
+      </h2>
+      
+      {% if completed_opportunities %}
+        <div class="row">
+          {% for student_opp in completed_opportunities %}
+            <div class="col-md-6 col-lg-4 mb-3">
+              <div class="card h-100 border-success">
+                <div class="card-body">
+                  <h5 class="card-title text-success">{{ student_opp.opportunity.title }}</h5>
+                  <p class="card-text">{{ student_opp.opportunity.description|truncatewords:15 }}</p>
+                  <hr>
+                  <small class="text-muted">
+                    <strong>Organization:</strong> {{ student_opp.opportunity.organization.display_name }}<br>
+                    <strong>Completed:</strong> 
+                    {% if student_opp.date_completed %}
+                      {{ student_opp.date_completed|date:"F d, Y" }}
+                    {% else %}
+                      Not yet recorded
+                    {% endif %}
+                  </small>
+                </div>
+                <div class="card-footer bg-transparent">
+                  <span class="badge bg-success">Completed</span>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="alert alert-info" role="alert">
+          <strong>No completed opportunities yet.</strong> Start exploring opportunities to get started!
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- In-Progress Opportunities Section -->
+  {% if in_progress_opportunities %}
+    <div class="row">
+      <div class="col-md-12">
+        <h2>In Progress</h2>
+        
+        <div class="row">
+          {% for student_opp in in_progress_opportunities %}
+            <div class="col-md-6 col-lg-4 mb-3">
+              <div class="card h-100 border-warning">
+                <div class="card-body">
+                  <h5 class="card-title text-warning">{{ student_opp.opportunity.title }}</h5>
+                  <p class="card-text">{{ student_opp.opportunity.description|truncatewords:15 }}</p>
+                  <hr>
+                  <small class="text-muted">
+                    <strong>Organization:</strong> {{ student_opp.opportunity.organization.display_name }}<br>
+                    <strong>Started:</strong> {{ student_opp.date_joined|date:"F d, Y" }}
+                  </small>
+                </div>
+                <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+                  <span class="badge bg-warning">In Progress</span>
+                  <a href="{% url 'mark_opportunity_pending' student_opp.id %}" class="btn btn-sm btn-success">
+                    Mark Complete
+                  </a>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Pending Opportunities Section -->
+  {% if pending_opportunities %}
+    <div class="row mb-5">
+      <div class="col-md-12">
+        <h2>Pending Approval
+          <span class="badge bg-info">{{ pending_count }}</span>
+        </h2>
+        
+        <div class="row">
+          {% for student_opp in pending_opportunities %}
+            <div class="col-md-6 col-lg-4 mb-3">
+              <div class="card h-100 border-info">
+                <div class="card-body">
+                  <h5 class="card-title text-info">{{ student_opp.opportunity.title }}</h5>
+                  <p class="card-text">{{ student_opp.opportunity.description|truncatewords:15 }}</p>
+                  <hr>
+                  <small class="text-muted">
+                    <strong>Organization:</strong> {{ student_opp.opportunity.organization.display_name }}<br>
+                    <strong>Submitted:</strong> {{ student_opp.date_pending|date:"F d, Y" }}
+                  </small>
+                </div>
+                <div class="card-footer bg-transparent">
+                  <span class="badge bg-info">Pending Review</span>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Call to Action -->
+  <div class="row mt-5">
+    <div class="col-md-12">
+      <a href="{% url 'screen2' %}" class="btn btn-primary">Browse More Opportunities</a>
+      <a href="{% url 'student_achievements' %}" class="btn btn-secondary">View Achievements</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

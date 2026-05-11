@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row">
+    <div class="col-md-8 offset-md-2">
+      <div class="card border-danger">
+        <div class="card-body">
+          <h4 class="card-title">Deny Opportunity Completion?</h4>
+          
+          <div class="alert alert-info" role="alert">
+            <strong>Student:</strong> {{ student_opportunity.student.display_name }}<br>
+            <strong>Opportunity:</strong> {{ student_opportunity.opportunity.title }}<br>
+            <strong>Submitted:</strong> {{ student_opportunity.date_pending|date:"F d, Y g:i A" }}
+          </div>
+
+          <div class="card bg-light mb-3">
+            <div class="card-body">
+              <h6 class="card-title">Opportunity Details</h6>
+              <p class="card-text">{{ student_opportunity.opportunity.description }}</p>
+            </div>
+          </div>
+
+          <p>
+            By denying this submission, the opportunity will be kicked back to "In Progress" status,
+            and {{ student_opportunity.student.display_name }} will be notified with your feedback.
+          </p>
+
+          <form method="post">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+              {{ form.denial_reason }}
+              {% if form.denial_reason.help_text %}
+                <small class="form-text text-muted d-block mt-1">
+                  {{ form.denial_reason.help_text|safe }}
+                </small>
+              {% endif %}
+              {% if form.denial_reason.errors %}
+                <div class="alert alert-danger mt-2">
+                  {{ form.denial_reason.errors }}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="d-flex gap-2 justify-content-center">
+              <button type="submit" class="btn btn-danger btn-lg">
+                <i class="bi bi-x-circle"></i> Deny & Send Back
+              </button>
+              <a href="{% url 'organization_dashboard' %}" class="btn btn-secondary btn-lg">
+                <i class="bi bi-arrow-left"></i> Cancel
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

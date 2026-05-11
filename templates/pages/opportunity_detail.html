@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="dash-card">
+    <h1>{{ opportunity.title }}</h1>
+    <p>{{ opportunity.description|linebreaksbr }}</p>
+    <p class="muted">Posted {{ opportunity.posted_date|date:"F j, Y" }}</p>
+
+    {% if application %}
+      <p class="muted">Current application status: {{ application.get_status_display }}</p>
+      {% if application.status == 'draft' %}
+        <div class="button-row">
+          <a href="{% url 'apply_to_opportunity' opportunity.id %}" class="btn btn-primary">Resume draft</a>
+          <a href="{% url 'my_applications' %}" class="btn">My Applications</a>
+        </div>
+      {% else %}
+        <div class="button-row">
+          <a href="{% url 'application_detail' application.id %}" class="btn btn-primary">View application</a>
+          <a href="{% url 'my_applications' %}" class="btn">My Applications</a>
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="button-row">
+        <a href="{% url 'apply_to_opportunity' opportunity.id %}" class="btn btn-primary">Apply now</a>
+        <a href="{% url 'my_applications' %}" class="btn">My Applications</a>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

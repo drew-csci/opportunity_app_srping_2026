@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordResetForm, SetPasswordForm
 from .models import User
 
 class UserRegistrationForm(UserCreationForm):
@@ -16,3 +16,16 @@ class EmailAuthenticationForm(AuthenticationForm):
         self.fields['username'].label = 'Email'
         self.fields['username'].widget.attrs.update({'placeholder': 'you@example.com', 'autofocus': True})
         self.fields['password'].widget.attrs.update({'placeholder': 'password'})
+
+
+class EmailPasswordResetForm(PasswordResetForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['email'].widget.attrs.update({'placeholder': 'you@example.com', 'autofocus': True})
+
+
+class CustomSetPasswordForm(SetPasswordForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['new_password1'].widget.attrs.update({'placeholder': 'New password', 'autofocus': True})
+        self.fields['new_password2'].widget.attrs.update({'placeholder': 'Confirm new password'})

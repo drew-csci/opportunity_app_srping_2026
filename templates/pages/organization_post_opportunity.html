@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+
+{% block title %}Post New Opportunity - Opportunity App{% endblock %}
+
+{% block content %}
+<section class="post-opportunity-page">
+    <div class="hero-panel">
+        <div class="hero-copy">
+            <p class="eyebrow">Create Opportunity</p>
+            <h1>Post a new volunteer or internship role</h1>
+            <p>Share the details candidates need to understand the role, evaluate fit, and submit strong applications.</p>
+        </div>
+        <div class="hero-actions">
+            <a href="{% url 'organization_dashboard' %}" class="back-link">Back to Dashboard</a>
+            <a href="{% url 'organization_opportunities' %}" class="ghost-link">View Posted Opportunities</a>
+        </div>
+    </div>
+
+    <div class="form-shell">
+        <form method="post" class="opportunity-form">
+            {% csrf_token %}
+
+            <div class="form-grid">
+                {% for field in form %}
+                <div class="field-group {% if field.name == 'description' or field.name == 'required_skills' %}full-width{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                    <p class="help-text">{{ field.help_text }}</p>
+                    {% endif %}
+                    {% if field.errors %}
+                    <ul class="error-list">
+                        {% for error in field.errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if form.non_field_errors %}
+            <ul class="error-list form-errors">
+                {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+
+            <div class="submit-row">
+                <button type="submit" class="submit-btn">Publish Opportunity</button>
+                <p class="submit-note">The new listing will appear on your opportunities page immediately after a successful submission.</p>
+            </div>
+        </form>
+    </div>
+</section>
+
+<style>
+.post-opportunity-page {
+    padding: 2.5rem 0 3rem;
+}
+
+.hero-panel {
+    display: flex;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.75rem;
+    border-radius: 28px;
+    background:
+        radial-gradient(circle at top left, rgba(16, 185, 129, 0.18), transparent 36%),
+        linear-gradient(135deg, #0f172a 0%, #134e4a 100%);
+    color: #fff;
+    margin-bottom: 1.5rem;
+}
+
+.hero-copy h1 {
+    margin: 0;
+    font-size: 2rem;
+}
+
+.hero-copy p:last-child {
+    max-width: 42rem;
+    color: rgba(255, 255, 255, 0.86);
+    line-height: 1.6;
+    margin-top: 0.75rem;
+}
+
+.eyebrow {
+    margin: 0 0 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: #a7f3d0;
+    font-size: 0.85rem;
+}
+
+.hero-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-end;
+}
+
+.back-link,
+.ghost-link {
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.back-link {
+    color: #fff;
+}
+
+.ghost-link {
+    color: #d1fae5;
+}
+
+.form-shell {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid #dbe4ee;
+    border-radius: 28px;
+    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.08);
+    padding: 1.5rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.1rem 1.25rem;
+}
+
+.field-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.field-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.field-group label {
+    margin-bottom: 0.45rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.field-group input,
+.field-group select,
+.field-group textarea {
+    width: 100%;
+    padding: 0.9rem 1rem;
+    border-radius: 16px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #0f172a;
+    font: inherit;
+    box-sizing: border-box;
+}
+
+.field-group textarea {
+    resize: vertical;
+    min-height: 8rem;
+}
+
+.field-group input:focus,
+.field-group select:focus,
+.field-group textarea:focus {
+    outline: none;
+    border-color: #0f766e;
+    box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.12);
+}
+
+.help-text {
+    margin: 0.45rem 0 0;
+    color: #64748b;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+.error-list {
+    margin: 0.5rem 0 0;
+    padding-left: 1.25rem;
+    color: #b91c1c;
+}
+
+.form-errors {
+    margin-top: 1rem;
+}
+
+.submit-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.submit-btn {
+    border: 0;
+    border-radius: 999px;
+    background: #0f766e;
+    color: #fff;
+    padding: 0.95rem 1.35rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.submit-btn:hover {
+    background: #115e59;
+}
+
+.submit-note {
+    margin: 0;
+    color: #475569;
+    line-height: 1.5;
+    max-width: 28rem;
+}
+
+@media (max-width: 860px) {
+    .hero-panel,
+    .submit-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .hero-actions {
+        align-items: flex-start;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .field-group.full-width {
+        grid-column: auto;
+    }
+}
+
+@media (max-width: 640px) {
+    .post-opportunity-page {
+        padding: 1.5rem 0 2rem;
+    }
+
+    .hero-copy h1 {
+        font-size: 1.6rem;
+    }
+
+    .hero-panel,
+    .form-shell {
+        padding: 1.25rem;
+    }
+}
+</style>
+{% endblock %}

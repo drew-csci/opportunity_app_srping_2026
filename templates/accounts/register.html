@@ -1,36 +1,45 @@
 {% extends "base.html" %}
 {% block content %}
-  <section class="auth-card">
-    <h1>Create Account</h1>
-    <form method="post" novalidate>
-      {% csrf_token %}
-      <div class="form-field">
-        <label for="{{ form.email.id_for_label }}">Email</label>
-        {{ form.email }}
-        {% if form.email.errors %}<div class="error">{{ form.email.errors.0 }}</div>{% endif %}
+  <section class="auth-shell">
+    <section class="auth-card">
+      <span class="auth-badge">Join The Network</span>
+      <h1>Create Account</h1>
+      <p class="auth-subtitle">Start connecting with volunteer opportunities in minutes.</p>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="form-field">
+          <label for="{{ form.email.id_for_label }}">Email</label>
+          {{ form.email }}
+          {% if form.email.errors %}<div class="error">{{ form.email.errors.0 }}</div>{% endif %}
+        </div>
+
+        <fieldset class="form-field">
+          <legend>User type</legend>
+          {{ form.user_type }}
+          {% if form.user_type.errors %}<div class="error">{{ form.user_type.errors.0 }}</div>{% endif %}
+        </fieldset>
+
+        <div class="form-field">
+          <label for="{{ form.password1.id_for_label }}">Password</label>
+          {{ form.password1 }}
+          {% if form.password1.errors %}<div class="error">{{ form.password1.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="form-field">
+          <label for="{{ form.password2.id_for_label }}">Confirm Password</label>
+          {{ form.password2 }}
+          {% if form.password2.errors %}<div class="error">{{ form.password2.errors.0 }}</div>{% endif %}
+        </div>
+
+        <button class="btn primary" type="submit">Create Account</button>
+      </form>
+
+      <div class="auth-links">
+        <a href="{% url 'login' %}">Back to sign in</a>
       </div>
 
-      <fieldset class="form-field">
-        <legend>User type</legend>
-        {{ form.user_type }}
-        {% if form.user_type.errors %}<div class="error">{{ form.user_type.errors.0 }}</div>{% endif %}
-      </fieldset>
-
-      <div class="form-field">
-        <label for="{{ form.password1.id_for_label }}">Password</label>
-        {{ form.password1 }}
-        {% if form.password1.errors %}<div class="error">{{ form.password1.errors.0 }}</div>{% endif %}
-      </div>
-      <div class="form-field">
-        <label for="{{ form.password2.id_for_label }}">Confirm Password</label>
-        {{ form.password2 }}
-        {% if form.password2.errors %}<div class="error">{{ form.password2.errors.0 }}</div>{% endif %}
-      </div>
-
-      <button class="btn primary" type="submit">Create Account</button>
-    </form>
-    <div class="auth-links">
-      <a href="{% url 'login' %}">Back to sign in</a>
-    </div>
+      <p class="auth-note">Tip: use a school or organization email to make collaboration easier.</p>
+    </section>
   </section>
 {% endblock %}

@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="profile-page">
+
+  {# Hero Banner #}
+  <div class="profile-hero">
+
+    <div class="profile-hero__info">
+      <p class="profile-hero__label">Volunteer Profile</p>
+      <h1 class="profile-hero__name">{{ request.user.display_name }}</h1>
+      <div class="profile-hero__meta">
+        <span>{{ request.user.email }}</span>
+        {% if profile.phone %}
+          <span class="profile-hero__meta-sep">&middot;</span>
+          <span>{{ profile.phone }}</span>
+        {% endif %}
+      </div>
+    </div>
+    <a class="btn profile-edit-btn" href="{% url 'volunteer_profile_edit' %}">Edit Profile</a>
+  </div>
+
+  {# About: only shown if bio or skills exist #}
+  {% if profile.bio or profile.skills_list %}
+  <section class="dash-card" style="margin-top:1.25rem">
+    <h2 class="profile-section-heading">About</h2>
+    {% if profile.bio %}<p class="profile-bio-text">{{ profile.bio }}</p>{% endif %}
+    {% if profile.skills_list %}
+      <div class="profile-info-label" style="margin-bottom:.5rem">Skills</div>
+      <div class="skill-tags">
+        {% for skill in profile.skills_list %}<span class="skill-tag">{{ skill }}</span>{% endfor %}
+      </div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {# Experience Timeline #}
+  <section class="dash-card" style="margin-top:1.25rem">
+    <h2 class="profile-section-heading">Volunteer Experience</h2>
+    {% if experiences %}
+      <div class="profile-timeline">
+        {% for exp in experiences %}
+        <div class="timeline-entry">
+          <div class="timeline-role">
+            {{ exp.role }}
+            {% if exp.is_current %}<span class="timeline-badge">Current</span>{% endif %}
+          </div>
+          <div class="timeline-org">{{ exp.organization_name }}</div>
+          <div class="timeline-dates">
+            {{ exp.start_date|date:"M Y" }} &ndash;
+            {% if exp.is_current %}Present{% elif exp.end_date %}{{ exp.end_date|date:"M Y" }}{% else %}&mdash;{% endif %}
+          </div>
+          {% if exp.description %}<p class="timeline-desc">{{ exp.description }}</p>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="profile-empty">No volunteer experience added yet.</p>
+    {% endif %}
+  </section>
+
+</div>
+{% endblock %}

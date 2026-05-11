@@ -1,6 +1,7 @@
 """
-Test settings for Django tests.
+Test settings for Django tests (with SQLite in-memory database).
 Uses SQLite instead of PostgreSQL for easier testing.
+For certain tests, inherits from main settings but overrides database configuration.
 """
 import os
 from pathlib import Path
