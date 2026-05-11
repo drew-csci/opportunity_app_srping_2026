@@ -25,7 +25,8 @@ fieldset.form-field { border:1px solid #e5e7eb; border-radius:.6rem; padding:.75
 .messages li { background:#ecfeff; border:1px solid #22d3ee; color:#0e7490; padding:.6rem .9rem; border-radius:.5rem; margin:.5rem 0; }
 
 /* Search & Filter */
-.search-section { margin-bottom:1.5rem; }
+.dashboard-actions { margin-bottom:1rem; }
+.search-section { margin-top:1rem; margin-bottom:1.5rem; padding:1rem; border:1px solid #e2e8f0; border-radius:.75rem; background:#f8fafc; }
 .search-form { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; margin-bottom:.75rem; }
 .search-form input[type="text"] { flex:1; min-width:200px; padding:.6rem .75rem; border:1px solid #cbd5e1; border-radius:.5rem; font-size:1rem; }
 .filter-form { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }

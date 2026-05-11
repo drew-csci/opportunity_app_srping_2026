@@ -16,7 +16,8 @@ def welcome(request):
 def screen1(request):
     role = request.user.user_type.title() if hasattr(request.user, 'user_type') else 'User'
 
-    opportunities = Opportunity.objects.filter(is_active=True)
+    base_opportunities = Opportunity.objects.filter(is_active=True)
+    opportunities = base_opportunities
 
     query = request.GET.get('q', '').strip()
     location = request.GET.get('location', '').strip()
@@ -44,10 +45,33 @@ def screen1(request):
     if opp_type:
         opportunities = opportunities.filter(opportunity_type=opp_type)
 
+    location_options = sorted(
+        base_opportunities.exclude(location='').values_list('location', flat=True).distinct()
+    )
+    duration_options = sorted(
+        base_opportunities.exclude(duration='').values_list('duration', flat=True).distinct()
+    )
+
+    skill_options = []
+    seen_skills = set()
+    for skill_text in base_opportunities.exclude(skills_required='').values_list('skills_required', flat=True):
+        for skill in [value.strip() for value in skill_text.split(',') if value.strip()]:
+            normalized = skill.lower()
+            if normalized in seen_skills:
+                continue
+            seen_skills.add(normalized)
+            skill_options.append(skill)
+    skill_options.sort(key=str.lower)
+
     context = {
         'role': role,
         'opportunities': opportunities,
         'query': query,
+        'filter_options': {
+            'locations': location_options,
+            'durations': duration_options,
+            'skills': skill_options,
+        },
         'filters': {
             'location': location,
             'cause': cause,

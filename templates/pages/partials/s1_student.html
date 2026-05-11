@@ -1,6 +1,6 @@
 <h1>Student Dashboard</h1>
 <p>Welcome to your dashboard. From here you can manage your achievements.</p>
-<div class="button-row" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+<div class="button-row dashboard-actions">
     <a href="{% url 'student_achievements' %}" class="btn btn-primary">My Achievements</a>
     <a href="{% url 'followed_organizations' %}" class="btn btn-secondary">Organizations I Follow</a>
 </div>
@@ -24,10 +24,25 @@
   <!-- Filters -->
   <form class="filter-form" method="get" action="{% url 'screen1' %}">
     <input type="hidden" name="q" value="{{ query }}">
-    <input type="text" name="location" value="{{ filters.location }}" placeholder="Location">
+    <input type="text" name="location" value="{{ filters.location }}" placeholder="Location" list="location-options">
+    <datalist id="location-options">
+      {% for location_option in filter_options.locations %}
+        <option value="{{ location_option }}"></option>
+      {% endfor %}
+    </datalist>
     <input type="text" name="cause" value="{{ filters.cause }}" placeholder="Cause">
-    <input type="text" name="duration" value="{{ filters.duration }}" placeholder="Duration">
-    <input type="text" name="skills" value="{{ filters.skills }}" placeholder="Skills">
+    <input type="text" name="duration" value="{{ filters.duration }}" placeholder="Duration" list="duration-options">
+    <datalist id="duration-options">
+      {% for duration_option in filter_options.durations %}
+        <option value="{{ duration_option }}"></option>
+      {% endfor %}
+    </datalist>
+    <input type="text" name="skills" value="{{ filters.skills }}" placeholder="Skills" list="skills-options">
+    <datalist id="skills-options">
+      {% for skill_option in filter_options.skills %}
+        <option value="{{ skill_option }}"></option>
+      {% endfor %}
+    </datalist>
     <select name="type">
       <option value="">All Types</option>
       <option value="volunteer" {% if filters.type == 'volunteer' %}selected{% endif %}>Volunteer</option>

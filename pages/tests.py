@@ -87,6 +87,11 @@ class Screen1NoQueryReturnsAllActiveOpportunitiesTest(TestCase):
         # Total count must equal the number of active opportunities (2)
         self.assertEqual(opportunities.count(), 2)
 
+        # Dropdown suggestion context should be populated from active opportunities
+        self.assertIn('Chicago, IL', response.context['filter_options']['locations'])
+        self.assertIn('1 day', response.context['filter_options']['durations'])
+        self.assertIn('Python', response.context['filter_options']['skills'])
+
 
 class ClearButtonVisibilityIntegrationTest(TestCase):
     """
