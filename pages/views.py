@@ -249,6 +249,8 @@ def faq(request):
 
 @login_required
 def dashboard(request):
+    if hasattr(request.user, 'user_type') and request.user.user_type == 'student':
+        return redirect('student_dashboard')
     role = request.user.user_type.title() if hasattr(request.user, 'user_type') else 'User'
     context = {'role': role}
     if hasattr(request.user, 'user_type') and request.user.user_type == 'organization':
@@ -261,10 +263,39 @@ def dashboard(request):
 def student_dashboard(request):
     if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
         return redirect('screen1')
-    completed_opportunities = StudentOpportunity.objects.filter(student=request.user, status='completed').select_related('opportunity', 'opportunity__organization')
-    in_progress_opportunities = StudentOpportunity.objects.filter(student=request.user, status='in_progress').select_related('opportunity', 'opportunity__organization')
-    pending_opportunities = StudentOpportunity.objects.filter(student=request.user, status='pending').select_related('opportunity', 'opportunity__organization')
+
+    student = request.user
+
+    completed_opportunities = StudentOpportunity.objects.filter(
+        student=student, status='completed'
+    ).select_related('opportunity', 'opportunity__organization')
+    in_progress_opportunities = StudentOpportunity.objects.filter(
+        student=student, status='in_progress'
+    ).select_related('opportunity', 'opportunity__organization')
+    pending_opportunities = StudentOpportunity.objects.filter(
+        student=student, status='pending'
+    ).select_related('opportunity', 'opportunity__organization')
+
+    applications_qs = Application.objects.filter(student=student).select_related('opportunity')
+    applications_count = applications_qs.count()
+    applied_opportunity_ids = list(applications_qs.values_list('opportunity_id', flat=True))
+
+    recommended_opportunities = (
+        Opportunity.objects.filter(is_active=True)
+        .exclude(id__in=applied_opportunity_ids)
+        .select_related('organization')
+        .order_by('-posted_date')[:5]
+    )
+
+    first_name = (student.first_name or student.display_name or student.email).split(' ')[0]
+    initials = ''.join(part[:1] for part in (student.first_name, student.last_name) if part).upper() or first_name[:1].upper()
+
     context = {
+        'student': student,
+        'first_name': first_name,
+        'initials': initials,
+        'applications_count': applications_count,
+        'recommended_opportunities': recommended_opportunities,
         'completed_opportunities': completed_opportunities,
         'in_progress_opportunities': in_progress_opportunities,
         'pending_opportunities': pending_opportunities,
