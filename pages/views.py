@@ -5,7 +5,6 @@ from django.db.models import Q
 from django.http import JsonResponse, HttpResponseForbidden
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
-from django.views.decorators.http import require_http_methods
 
 from .models import Achievement, StudentOpportunity, Opportunity, OrganizationFollow, Notification, VolunteerProfile, VolunteerExperience, Application, OrganizationProfile, OrganizationImpactMetric, Message
 from .forms import AchievementForm, OpportunityForm, VolunteerProfileForm, VolunteerExperienceForm, ApplicationForm, OrganizationProfileForm, OrganizationImpactMetricForm, MessageReplyForm
@@ -182,11 +181,11 @@ def remind_organization(request, application_id):
     application = get_object_or_404(Application, id=application_id, student=request.user)
     if application.status != Application.Status.PENDING:
         messages.error(request, 'Reminders can only be sent for applications that are still pending.')
-        return redirect('my_applications')
+        return redirect('opportunity_list')
 
     organization = application.opportunity.organization
     messages.success(request, f'Reminder sent to {organization.display_name}.')
-    return redirect('my_applications')
+    return redirect('opportunity_list')
 @login_required
 def student_achievements(request):
     if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
