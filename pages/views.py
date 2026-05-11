@@ -186,6 +186,8 @@ def remind_organization(request, application_id):
     organization = application.opportunity.organization
     messages.success(request, f'Reminder sent to {organization.display_name}.')
     return redirect('opportunity_list')
+
+
 @login_required
 def student_achievements(request):
     if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
