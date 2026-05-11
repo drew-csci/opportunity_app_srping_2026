@@ -3,9 +3,18 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
 from django.utils import timezone
+from django.views.decorators.http import require_http_methods
+from django.contrib import messages
 from accounts.models import User
-from .models import Achievement, Opportunity, Application, StudentOpportunity, OrganizationFollow, Notification, VolunteerProfile, VolunteerExperience, Message
-from .forms import AchievementForm, OpportunityForm, VolunteerProfileForm, VolunteerExperienceForm, MessageReplyForm
+
+from .models import Achievement, StudentOpportunity, Opportunity, OrganizationFollow, Notification, VolunteerProfile, VolunteerExperience, Application, OrganizationProfile, OrganizationImpactMetric, OrganizationFollow, Message
+from .forms import AchievementForm, OpportunityForm, VolunteerProfileForm, VolunteerExperienceForm, ApplicationForm, OrganizationProfileForm, OrganizationImpactMetricForm, MessageReplyForm
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+
+
 
 
 def welcome(request):
@@ -28,7 +37,6 @@ def screen3(request):
 
 
 @login_required
-<<<<<<< HEAD
 def opportunity_list(request):
     if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
         return redirect('screen1')
@@ -132,8 +140,6 @@ def remind_organization(request, application_id):
 
 
 @login_required
-=======
->>>>>>> origin/main
 def student_achievements(request):
     if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
         return redirect('screen1')
@@ -334,17 +340,120 @@ def volunteer_profile(request):
 @login_required
 def organization_profile(request, org_id):
     organization = get_object_or_404(User, id=org_id, user_type='organization')
+    profile, _ = OrganizationProfile.objects.get_or_create(organization=organization)
     is_following = False
     unread_message_count = 0
     if request.user.user_type == 'student':
         is_following = OrganizationFollow.objects.filter(student=request.user, organization=organization).exists()
     elif request.user.user_type == 'organization' and request.user.id == org_id:
         unread_message_count = Message.objects.filter(recipient=request.user, is_read=False).count()
-    opportunities = Opportunity.objects.filter(organization=organization, is_active=True)
+
+    opportunities = Opportunity.objects.filter(organization=organization, is_active=True).order_by('-created_at')
+
     return render(request, 'pages/organization_profile.html', {
-        'organization': organization, 'is_following': is_following,
-        'opportunities': opportunities, 'unread_message_count': unread_message_count,
+        'organization': organization,
+        'profile': profile,
+        'is_following': is_following,
+        'opportunities': opportunities,
+        'impact_metrics': profile.impact_metrics.all(),
+        'unread_message_count': unread_message_count,
     })
+
+
+@login_required
+def organization_profile_edit(request, org_id):
+    organization = get_object_or_404(User, id=org_id, user_type='organization')
+    if request.user != organization:
+        return redirect('organization_profile', org_id=org_id)
+
+    profile, _ = OrganizationProfile.objects.get_or_create(organization=organization)
+
+    if request.method == 'POST':
+        form = OrganizationProfileForm(request.POST, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Organization profile updated.')
+            return redirect('organization_profile', org_id=org_id)
+    else:
+        form = OrganizationProfileForm(instance=profile)
+
+    return render(request, 'pages/organization_profile_edit.html', {
+        'organization': organization,
+        'profile': profile,
+        'form': form,
+        'impact_metrics': profile.impact_metrics.all(),
+    })
+
+
+@login_required
+def organization_metric_add(request, org_id):
+    organization = get_object_or_404(User, id=org_id, user_type='organization')
+    if request.user != organization:
+        return redirect('organization_profile', org_id=org_id)
+
+    profile, _ = OrganizationProfile.objects.get_or_create(organization=organization)
+
+    if request.method == 'POST':
+        form = OrganizationImpactMetricForm(request.POST)
+        if form.is_valid():
+            metric = form.save(commit=False)
+            metric.organization_profile = profile
+            metric.save()
+            messages.success(request, 'Impact metric added.')
+            return redirect('organization_profile_edit', org_id=org_id)
+    else:
+        form = OrganizationImpactMetricForm()
+
+    return render(request, 'pages/organization_profile_edit.html', {
+        'organization': organization,
+        'profile': profile,
+        'form': OrganizationProfileForm(instance=profile),
+        'metric_form': form,
+        'impact_metrics': profile.impact_metrics.all(),
+        'editing_metric': None,
+    })
+
+
+@login_required
+def organization_metric_edit(request, org_id, pk):
+    organization = get_object_or_404(User, id=org_id, user_type='organization')
+    if request.user != organization:
+        return redirect('organization_profile', org_id=org_id)
+
+    profile, _ = OrganizationProfile.objects.get_or_create(organization=organization)
+    metric = get_object_or_404(OrganizationImpactMetric, pk=pk, organization_profile=profile)
+
+    if request.method == 'POST':
+        form = OrganizationImpactMetricForm(request.POST, instance=metric)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Impact metric updated.')
+            return redirect('organization_profile_edit', org_id=org_id)
+    else:
+        form = OrganizationImpactMetricForm(instance=metric)
+
+    return render(request, 'pages/organization_profile_edit.html', {
+        'organization': organization,
+        'profile': profile,
+        'form': OrganizationProfileForm(instance=profile),
+        'metric_form': form,
+        'impact_metrics': profile.impact_metrics.all(),
+        'editing_metric': metric,
+    })
+
+
+@login_required
+def organization_metric_delete(request, org_id, pk):
+    organization = get_object_or_404(User, id=org_id, user_type='organization')
+    if request.user != organization:
+        return redirect('organization_profile', org_id=org_id)
+
+    profile, _ = OrganizationProfile.objects.get_or_create(organization=organization)
+    metric = get_object_or_404(OrganizationImpactMetric, pk=pk, organization_profile=profile)
+    if request.method == 'POST':
+        metric.delete()
+        messages.success(request, 'Impact metric deleted.')
+    return redirect('organization_profile_edit', org_id=org_id)
 
 
 @login_required
@@ -408,10 +517,7 @@ def experience_delete(request, pk):
 
 @login_required
 def follow_organization(request, org_id):
-<<<<<<< HEAD
     """Follow an organization. Supports both regular POST and AJAX requests."""
-=======
->>>>>>> origin/main
     if request.user.user_type != 'student':
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'error': 'Only students can follow organizations'}, status=403)
@@ -423,6 +529,7 @@ def follow_organization(request, org_id):
     return redirect('organization_profile', org_id=org_id)
 
 
+@login_required
 @login_required
 def unfollow_organization(request, org_id):
     if request.user.user_type != 'student':
