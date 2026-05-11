@@ -17,7 +17,7 @@
         <a href="{% url 'apply_to_opportunity' application.opportunity.id %}" class="btn btn-primary">Continue Draft</a>
       {% endif %}
       <a href="{% url 'opportunity_detail' application.opportunity.id %}" class="btn">Opportunity Info</a>
-      <a href="{% url 'my_applications' %}" class="btn">Back to My Applications</a>
+      <a href="{% url 'opportunity_list' %}" class="btn">Back to My Applications</a>
     </div>
   </section>
 {% endblock %}
