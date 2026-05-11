@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Achievement, Opportunity, StudentOpportunity, Notification, Application
+from .models import Achievement, Opportunity, StudentOpportunity, Notification, Application, OrganizationProfile, OrganizationImpactMetric
 
 # Register your models here.
 
@@ -53,7 +53,6 @@ class StudentOpportunityAdmin(admin.ModelAdmin):
         }),
     )
 
-
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
     list_display = ('recipient', 'is_read', 'created_at')
@@ -79,3 +78,15 @@ class ApplicationAdmin(admin.ModelAdmin):
     list_display = ('opportunity', 'student', 'status', 'applied_date', 'responded_date')
     list_filter = ('status', 'opportunity')
     search_fields = ('student__email', 'opportunity__title', 'message')
+
+
+@admin.register(OrganizationProfile)
+class OrganizationProfileAdmin(admin.ModelAdmin):
+    list_display = ('organization', 'organization_name', 'location')
+    search_fields = ('organization__email', 'organization__first_name', 'organization__last_name', 'organization_name', 'location')
+
+
+@admin.register(OrganizationImpactMetric)
+class OrganizationImpactMetricAdmin(admin.ModelAdmin):
+    list_display = ('title', 'value', 'organization_profile')
+    search_fields = ('title', 'value', 'description', 'organization_profile__organization__email')
