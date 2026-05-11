@@ -138,6 +138,18 @@ class OrganizationImpactMetricForm(forms.ModelForm):
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
         }
+class ApplicationForm(forms.ModelForm):
+    class Meta:
+        model = Application
+        fields = ['message']
+        labels = {
+            'message': 'Application details',
+        }
+        widgets = {
+            'message': forms.Textarea(attrs={'rows': 6}),
+        }
+
+
 class MessageReplyForm(forms.Form):
     """Form for replying to messages with character limit validation."""
     
