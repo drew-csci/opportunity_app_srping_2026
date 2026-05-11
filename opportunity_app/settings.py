@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import sys
 from dotenv import load_dotenv
 import sys
 
@@ -66,7 +67,6 @@ if 'test' in sys.argv:
 else:
     DATABASES = {
         'default': {
-
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': os.getenv('DB_NAME', 'opportunity'),
             'USER': os.getenv('DB_USER', 'oppo_app'),

@@ -1,21 +1,16 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.http import JsonResponse, HttpResponseForbidden
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
-from django.contrib import messages
-from accounts.models import User
 
-from .models import Achievement, StudentOpportunity, Opportunity, OrganizationFollow, Notification, VolunteerProfile, VolunteerExperience, Application, OrganizationProfile, OrganizationImpactMetric, OrganizationFollow, Message
+from .models import Achievement, StudentOpportunity, Opportunity, OrganizationFollow, Notification, VolunteerProfile, VolunteerExperience, Application, OrganizationProfile, OrganizationImpactMetric, Message
 from .forms import AchievementForm, OpportunityForm, VolunteerProfileForm, VolunteerExperienceForm, ApplicationForm, OrganizationProfileForm, OrganizationImpactMetricForm, MessageReplyForm
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
-
-
-
-
 
 def welcome(request):
     return render(request, 'pages/welcome.html')
@@ -23,7 +18,72 @@ def welcome(request):
 @login_required
 def screen1(request):
     role = request.user.user_type.title() if hasattr(request.user, 'user_type') else 'User'
-    return render(request, 'pages/screen1.html', {'role': role})
+
+    base_opportunities = Opportunity.objects.filter(is_active=True)
+    opportunities = base_opportunities
+
+    query = request.GET.get('q', '').strip()
+    location = request.GET.get('location', '').strip()
+    cause = request.GET.get('cause', '').strip()
+    duration = request.GET.get('duration', '').strip()
+    skills = request.GET.get('skills', '').strip()
+    opp_type = request.GET.get('type', '').strip()
+
+    if query:
+        opportunities = opportunities.filter(
+            Q(title__icontains=query) |
+            Q(description__icontains=query) |
+            Q(cause__icontains=query) |
+            Q(location__icontains=query) |
+            Q(skills_required__icontains=query)
+        )
+    if location:
+        opportunities = opportunities.filter(location__icontains=location)
+    if cause:
+        opportunities = opportunities.filter(cause__icontains=cause)
+    if duration:
+        opportunities = opportunities.filter(duration__icontains=duration)
+    if skills:
+        opportunities = opportunities.filter(skills_required__icontains=skills)
+    if opp_type:
+        opportunities = opportunities.filter(opportunity_type=opp_type)
+
+    location_options = sorted(
+        base_opportunities.exclude(location='').values_list('location', flat=True).distinct()
+    )
+    duration_options = sorted(
+        base_opportunities.exclude(duration='').values_list('duration', flat=True).distinct()
+    )
+
+    skill_options = []
+    seen_skills = set()
+    for skill_text in base_opportunities.exclude(skills_required='').values_list('skills_required', flat=True):
+        for skill in [value.strip() for value in skill_text.split(',') if value.strip()]:
+            normalized = skill.lower()
+            if normalized in seen_skills:
+                continue
+            seen_skills.add(normalized)
+            skill_options.append(skill)
+    skill_options.sort(key=str.lower)
+
+    context = {
+        'role': role,
+        'opportunities': opportunities,
+        'query': query,
+        'filter_options': {
+            'locations': location_options,
+            'durations': duration_options,
+            'skills': skill_options,
+        },
+        'filters': {
+            'location': location,
+            'cause': cause,
+            'duration': duration,
+            'skills': skills,
+            'type': opp_type,
+        },
+    }
+    return render(request, 'pages/screen1.html', context)
 
 @login_required
 def screen2(request):
@@ -102,17 +162,6 @@ def apply_to_opportunity(request, opportunity_id):
 
 
 @login_required
-def my_applications(request): # View to display the current student's applications to volunteer opportunities, showing the status and allowing access to application details
-    if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
-        return redirect('screen1')
-
-    applications = Application.objects.filter(student=request.user).select_related('opportunity').order_by('-applied_date') # Retrieve all applications for the current student, along with the related opportunity data, and order them by most recent applied date first
-    return render(request, 'pages/my_applications.html', {
-        'applications': applications,
-    })
-
-
-@login_required
 def application_detail(request, application_id): # View to display the details of a specific application, including the opportunity information and the current status of the application
     if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
         return redirect('screen1')
@@ -137,9 +186,6 @@ def remind_organization(request, application_id):
     organization = application.opportunity.organization
     messages.success(request, f'Reminder sent to {organization.display_name}.')
     return redirect('my_applications')
-
-
-@login_required
 def student_achievements(request):
     if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
         return redirect('screen1')
@@ -530,7 +576,6 @@ def follow_organization(request, org_id):
 
 
 @login_required
-@login_required
 def unfollow_organization(request, org_id):
     if request.user.user_type != 'student':
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -549,6 +594,7 @@ def followed_organizations(request):
         return redirect('screen1')
     follows = OrganizationFollow.objects.filter(student=request.user).select_related('organization')
     return render(request, 'pages/followed_organizations.html', {'follows': follows})
+
 
 
 @login_required

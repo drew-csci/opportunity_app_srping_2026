@@ -2,7 +2,6 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 
-# Create your models here.
 class Achievement(models.Model):
     student = models.ForeignKey(
         settings.AUTH_USER_MODEL,
