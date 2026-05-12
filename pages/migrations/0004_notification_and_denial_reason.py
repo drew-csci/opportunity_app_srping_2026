@@ -21,21 +21,11 @@ class Migration(migrations.Migration):
             name='Notification',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('notification_type', models.CharField(
-                    choices=[
-                        ('completion_denied', 'Completion Denied'),
-                        ('completion_approved', 'Completion Approved'),
-                    ],
-                    max_length=30,
-                )),
                 ('message', models.TextField()),
                 ('is_read', models.BooleanField(default=False)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('recipient', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='notifications', to=settings.AUTH_USER_MODEL)),
-                ('student_opportunity', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='notifications', to='pages.studentopportunity')),
             ],
-            options={
-                'ordering': ['-created_at'],
-            },
+            options={'ordering': ['-created_at']},
         ),
     ]

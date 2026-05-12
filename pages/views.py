@@ -8,8 +8,8 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.auth import get_user_model
 from django.contrib import messages
 
-from .models import Achievement, StudentOpportunity, Opportunity, OrganizationFollow, Notification, VolunteerProfile, VolunteerExperience, Application, OrganizationProfile, OrganizationImpactMetric, Message
-from .forms import AchievementForm, OpportunityForm, VolunteerProfileForm, VolunteerExperienceForm, ApplicationForm, OrganizationProfileForm, OrganizationImpactMetricForm, MessageReplyForm
+from .models import Achievement, StudentOpportunity, Opportunity, OrganizationFollow, Notification, VolunteerProfile, VolunteerExperience, Application, OrganizationProfile, OrganizationImpactMetric, Message, ContactMessage
+from .forms import AchievementForm, OpportunityForm, VolunteerProfileForm, VolunteerExperienceForm, ApplicationForm, OrganizationProfileForm, OrganizationImpactMetricForm, MessageReplyForm, ContactForm
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -37,7 +37,7 @@ def screen1(request):
             Q(description__icontains=query) |
             Q(cause__icontains=query) |
             Q(location__icontains=query) |
-            Q(skills_required__icontains=query)
+            Q(required_skills__icontains=query)
         )
     if location:
         opportunities = opportunities.filter(location__icontains=location)
@@ -46,7 +46,7 @@ def screen1(request):
     if duration:
         opportunities = opportunities.filter(duration__icontains=duration)
     if skills:
-        opportunities = opportunities.filter(skills_required__icontains=skills)
+        opportunities = opportunities.filter(required_skills__icontains=skills)
     if opp_type:
         opportunities = opportunities.filter(opportunity_type=opp_type)
 
@@ -59,7 +59,7 @@ def screen1(request):
 
     skill_options = []
     seen_skills = set()
-    for skill_text in base_opportunities.exclude(skills_required='').values_list('skills_required', flat=True):
+    for skill_text in base_opportunities.exclude(required_skills='').values_list('required_skills', flat=True):
         for skill in [value.strip() for value in skill_text.split(',') if value.strip()]:
             normalized = skill.lower()
             if normalized in seen_skills:
@@ -181,8 +181,8 @@ def remind_organization(request, application_id):
         return redirect('screen1')
 
     application = get_object_or_404(Application, id=application_id, student=request.user)
-    if application.status != Application.Status.PENDING:
-        messages.error(request, 'Reminders can only be sent for applications that are still pending.')
+    if application.status != 'pending':
+        messages.error(request, 'Reminders are only for pending applications.')
         return redirect('my_applications')
 
     organization = application.opportunity.organization
@@ -239,9 +239,9 @@ def review_application(request, application_id):
             if application.responded_date is None:
                 application.responded_date = timezone.now()
             application.save()
-            from django.db import connection
-            with connection.cursor() as cursor:
-                cursor.execute(
+            from django.db import connection as db_conn
+            with db_conn.cursor() as cur:
+                cur.execute(
                     "INSERT INTO pages_notification (recipient_id, message, is_read, created_at, notification_type) VALUES (%s, %s, %s, NOW(), %s)",
                     [application.student.id, f"Your application to '{application.opportunity.title}' has been {decision}.", False, decision]
                 )
@@ -337,11 +337,11 @@ def accept_application(request, application_id):
     application.status = 'accepted'
     application.responded_date = timezone.now()
     application.save()
-    from django.db import connection
-    with connection.cursor() as cursor:
-        cursor.execute(
-            "INSERT INTO pages_notification (recipient_id, message, is_read, created_at, notification_type) VALUES (%s, %s, %s, NOW(), %s)",
-            [application.student.id, f"Your application to '{application.opportunity.title}' has been accepted!", False, "accepted"]
+    from pages.models import Notification
+    Notification.objects.create(
+            recipient=application.student,
+            message=f"Your application to '{application.opportunity.title}' has been accepted!",
+            is_read=False,
         )
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'success': True, 'status': 'accepted', 'message': f'{application.student.display_name} application accepted!'})
@@ -359,7 +359,7 @@ def decline_application(request, application_id):
     from django.db import connection
     with connection.cursor() as cursor:
         cursor.execute(
-            "INSERT INTO pages_notification (recipient_id, message, is_read, created_at, notification_type) VALUES (%s, %s, %s, NOW(), %s)",
+            "INSERT INTO pages_notification (recipient_id, message, is_read, created_at, notification_type) VALUES (%s, %s, %s, CURRENT_TIMESTAMP, %s)",
             [application.student.id, f"Your application to '{application.opportunity.title}' has been declined.", False, "declined"]
         )
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -414,18 +414,15 @@ def organization_profile(request, org_id):
     elif request.user.user_type == 'organization' and request.user.id == org_id:
         unread_message_count = Message.objects.filter(recipient=request.user, is_read=False).count()
 
-    # Get current/open opportunities
     current_opportunities = Opportunity.objects.filter(
         organization=organization,
-        status='open'
-    ).order_by('-date_posted')
-    
-    # Get past/closed opportunities
+        is_active=True
+    ).order_by('-posted_date')
+
     past_opportunities = Opportunity.objects.filter(
         organization=organization,
-        status='closed'
-    ).order_by('-date_posted')
-    opportunities = Opportunity.objects.filter(organization=organization, is_active=True).order_by('-created_at')
+        is_active=False
+    ).order_by('-posted_date')
 
     return render(request, 'pages/organization_profile.html', {
         'organization': organization,
@@ -433,7 +430,6 @@ def organization_profile(request, org_id):
         'is_following': is_following,
         'current_opportunities': current_opportunities,
         'past_opportunities': past_opportunities,
-        'opportunities': opportunities,
         'impact_metrics': profile.impact_metrics.all(),
         'unread_message_count': unread_message_count,
     })
@@ -546,14 +542,17 @@ def volunteer_profile_edit(request):
             request.user.email = form.cleaned_data['email']
             request.user.save()
             profile.phone = form.cleaned_data['phone']
+            profile.location = form.cleaned_data['location']
             profile.bio = form.cleaned_data['bio']
             profile.skills = form.cleaned_data['skills']
+            profile.interests = form.cleaned_data['interests']
             profile.save()
             return redirect('volunteer_profile')
     else:
         form = VolunteerProfileForm(initial={
             'first_name': request.user.first_name, 'last_name': request.user.last_name,
-            'email': request.user.email, 'phone': profile.phone, 'bio': profile.bio, 'skills': profile.skills,
+            'email': request.user.email, 'phone': profile.phone, 'location': profile.location,
+            'bio': profile.bio, 'skills': profile.skills, 'interests': profile.interests,
         })
     experiences = VolunteerExperience.objects.filter(volunteer=request.user)
     return render(request, 'pages/volunteer_profile_edit.html', {'form': form, 'experiences': experiences})
@@ -831,3 +830,22 @@ def student_notifications(request):
         return redirect('screen1')
     notifications = Notification.objects.filter(recipient=request.user)
     return render(request, 'pages/student_notifications.html', {'notifications': notifications})
+
+
+@login_required
+def contact_us(request):
+    success = False
+    initial = {}
+    if request.user.is_authenticated:
+        initial['role'] = request.user.user_type if request.user.user_type in ('student', 'organization') else ''
+
+    if request.method == 'POST':
+        form = ContactForm(request.POST)
+        if form.is_valid():
+            form.save()
+            success = True
+            form = ContactForm(initial=initial)
+    else:
+        form = ContactForm(initial=initial)
+
+    return render(request, 'pages/contact_us.html', {'form': form, 'success': success})

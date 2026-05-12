@@ -19,11 +19,19 @@
     <a class="btn profile-edit-btn" href="{% url 'volunteer_profile_edit' %}">Edit Profile</a>
   </div>
 
-  {# About: only shown if bio or skills exist #}
-  {% if profile.bio or profile.skills_list %}
+  {# About: only shown if any about fields exist #}
+  {% if profile.bio or profile.skills_list or profile.location or profile.interests %}
   <section class="dash-card" style="margin-top:1.25rem">
     <h2 class="profile-section-heading">About</h2>
+    {% if profile.location %}
+      <div class="profile-info-label" style="margin-bottom:.25rem">Location</div>
+      <p style="margin:0 0 1rem">{{ profile.location }}</p>
+    {% endif %}
     {% if profile.bio %}<p class="profile-bio-text">{{ profile.bio }}</p>{% endif %}
+    {% if profile.interests %}
+      <div class="profile-info-label" style="margin-bottom:.25rem">Interests</div>
+      <p style="margin:0 0 1rem">{{ profile.interests }}</p>
+    {% endif %}
     {% if profile.skills_list %}
       <div class="profile-info-label" style="margin-bottom:.5rem">Skills</div>
       <div class="skill-tags">
