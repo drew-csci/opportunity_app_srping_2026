@@ -22,37 +22,35 @@ class Migration(migrations.Migration):
                 ('organization', models.ForeignKey(limit_choices_to={'user_type': 'organization'}, on_delete=django.db.models.deletion.CASCADE, related_name='organization_conversations', to=settings.AUTH_USER_MODEL)),
                 ('volunteer', models.ForeignKey(limit_choices_to={'user_type': 'student'}, on_delete=django.db.models.deletion.CASCADE, related_name='volunteer_conversations', to=settings.AUTH_USER_MODEL)),
             ],
-            options={
-                'ordering': ['-last_message_at'],
-                'unique_together': {('volunteer', 'organization')},
-            },
+            options={'ordering': ['-last_message_at'], 'unique_together': {('volunteer', 'organization')}},
         ),
-        migrations.CreateModel(
-            name='Message',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('content', models.TextField()),
-                ('timestamp', models.DateTimeField(auto_now_add=True)),
-                ('is_read', models.BooleanField(default=False)),
-                ('conversation', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='messages', to='pages.conversation')),
-                ('sender', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sent_messages', to=settings.AUTH_USER_MODEL)),
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.CreateModel(
+                    name='Message',
+                    fields=[
+                        ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                        ('content', models.TextField()),
+                        ('timestamp', models.DateTimeField(auto_now_add=True)),
+                        ('is_read', models.BooleanField(default=False)),
+                        ('conversation', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='messages', to='pages.conversation')),
+                        ('sender', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sent_messages', to=settings.AUTH_USER_MODEL)),
+                    ],
+                    options={'ordering': ['timestamp']},
+                ),
+                migrations.CreateModel(
+                    name='FAQSuggestion',
+                    fields=[
+                        ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                        ('faq_content', models.TextField()),
+                        ('relevance_score', models.FloatField(default=0.0)),
+                        ('was_accepted', models.BooleanField(default=False)),
+                        ('created_at', models.DateTimeField(auto_now_add=True)),
+                        ('message', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='faq_suggestions', to='pages.message')),
+                    ],
+                    options={'ordering': ['-relevance_score']},
+                ),
             ],
-            options={
-                'ordering': ['timestamp'],
-            },
-        ),
-        migrations.CreateModel(
-            name='FAQSuggestion',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('faq_content', models.TextField()),
-                ('relevance_score', models.FloatField(default=0.0)),
-                ('was_accepted', models.BooleanField(default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('message', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='faq_suggestions', to='pages.message')),
-            ],
-            options={
-                'ordering': ['-relevance_score'],
-            },
+            database_operations=[],
         ),
     ]

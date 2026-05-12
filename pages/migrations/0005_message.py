@@ -24,8 +24,6 @@ class Migration(migrations.Migration):
                 ('recipient', models.ForeignKey(limit_choices_to={'user_type': 'organization'}, on_delete=django.db.models.deletion.CASCADE, related_name='received_messages', to=settings.AUTH_USER_MODEL)),
                 ('sender', models.ForeignKey(limit_choices_to={'user_type': 'student'}, on_delete=django.db.models.deletion.CASCADE, related_name='sent_messages', to=settings.AUTH_USER_MODEL)),
             ],
-            options={
-                'ordering': ['-sent_at'],
-            },
+            options={'ordering': ['-sent_at']},
         ),
     ]

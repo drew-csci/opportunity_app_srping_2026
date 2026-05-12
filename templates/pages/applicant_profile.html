@@ -28,5 +28,9 @@
   {% else %}
     <p>No achievements posted yet.</p>
   {% endif %}
+
+  <div class="button-row">
+    <a href="{% url 'organization_applications' %}" class="btn">Back to applications</a>
+  </div>
 </section>
 {% endblock %}

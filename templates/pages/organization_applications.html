@@ -3,14 +3,19 @@
   <section class="dash-card">
     <h1>Organization Applications</h1>
 
-    {% if applications %} // Check if there are any applications to display. If there are, loop through each application and display the title of the associated opportunity, the name of the student who submitted the application, the current status of the application, a truncated version of the application message, and a button to review the application. If there are no applications, display a message indicating that there are no applications available yet.
+    {% if applications %}
       <div class="application-list">
         {% for application in applications %}
           <article class="item-card">
             <h2>{{ application.opportunity.title }}</h2>
-            <p class="muted">Student: {{ application.student.display_name }} • {{ application.get_status_display }}</p>
+            <p class="muted">Student: {{ application.student.display_name }} • 
+              <span style="color: {% if application.status == 'accepted' %}green{% elif application.status == 'declined' %}red{% else %}gray{% endif %}; font-weight: bold;">
+                {{ application.get_status_display }}
+              </span>
+            </p>
             <p>{{ application.message|truncatewords:30 }}</p>
             <div class="button-row">
+              <a href="{% url 'applicant_profile' application.student.id %}" class="btn btn-secondary">View Profile</a>
               <a href="{% url 'review_application' application.id %}" class="btn btn-primary">Review</a>
             </div>
           </article>

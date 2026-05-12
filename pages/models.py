@@ -121,6 +121,8 @@ class VolunteerProfile(models.Model):
     phone = models.CharField(max_length=20, blank=True)
     bio = models.TextField(blank=True)
     skills = models.TextField(blank=True)
+    location = models.CharField(max_length=100, blank=True)
+    interests = models.TextField(blank=True)
 
     def __str__(self):
         return f"{self.user.display_name}'s profile"
@@ -285,6 +287,30 @@ class Message(models.Model):
     @classmethod
     def get_unread_sent_count(cls, volunteer):
         return cls.objects.filter(sender=volunteer, is_read=False).count()
+
+
+class ContactMessage(models.Model):
+    ROLE_CHOICES = [
+        ('student', 'Volunteer / Student'),
+        ('organization', 'Organization'),
+    ]
+    INQUIRY_CHOICES = [
+        ('general', 'General Inquiry'),
+        ('technical', 'Technical Support'),
+        ('organization', 'Organization Support'),
+    ]
+
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    email = models.EmailField()
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    inquiry_type = models.CharField(max_length=20, choices=INQUIRY_CHOICES)
+    subject = models.CharField(max_length=200)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} – {self.inquiry_type} ({self.created_at.date()})"
 
 
 class Notification(models.Model):

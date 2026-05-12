@@ -37,18 +37,44 @@
           {% if form.phone.errors %}<div class="error">{{ form.phone.errors.0 }}</div>{% endif %}
         </div>
       </div>
+
+      <div class="form-field">
+        <label for="{{ form.location.id_for_label }}">Location</label>
+        <div class="location-autocomplete-wrapper">
+          {{ form.location }}
+          <ul id="location-dropdown" class="skills-dropdown"></ul>
+        </div>
+        <span class="muted" style="font-size:.85rem">{{ form.location.help_text }}</span>
+        {% if form.location.errors %}<div class="error">{{ form.location.errors.0 }}</div>{% endif %}
+      </div>
+
       <div class="form-field">
         <label for="{{ form.bio.id_for_label }}">Biography</label>
         {{ form.bio }}
         {% if form.bio.errors %}<div class="error">{{ form.bio.errors.0 }}</div>{% endif %}
       </div>
       <div class="form-field">
-        <label for="{{ form.skills.id_for_label }}">Skills</label>
-        <div class="skills-autocomplete-wrapper">
-          {{ form.skills }}
-          <ul id="skills-dropdown" class="skills-dropdown"></ul>
+        <label>Interests</label>
+        <input type="hidden" name="interests" id="id_interests" value="{{ form.interests.value|default:'' }}">
+        <div class="tag-picker tag-picker--lg" id="interests-picker">
+          <div class="tag-picker__tags" id="interests-tags"></div>
+          <input type="text" class="tag-picker__input" id="interests-search" placeholder="Search or type an interest..." autocomplete="off">
+          <ul class="tag-picker__dropdown" id="interests-dropdown"></ul>
         </div>
-        <span class="muted" style="font-size:.85rem">Comma-separated, e.g. Tutoring, Communicative, Fundraising</span>
+        <span class="muted" style="font-size:.82rem">{{ form.interests.help_text }}</span>
+        {% if form.interests.errors %}<div class="error">{{ form.interests.errors.0 }}</div>{% endif %}
+      </div>
+
+      <div class="form-field">
+        <label>Skills</label>
+        {# hidden input holds comma-separated value for form submission #}
+        <input type="hidden" name="skills" id="id_skills" value="{{ form.skills.value|default:'' }}">
+        <div class="tag-picker tag-picker--lg" id="skills-picker">
+          <div class="tag-picker__tags" id="skills-tags"></div>
+          <input type="text" class="tag-picker__input" id="skills-search" placeholder="Search or type a skill..." autocomplete="off">
+          <ul class="tag-picker__dropdown" id="skills-dropdown"></ul>
+        </div>
+        <span class="muted" style="font-size:.82rem">Select from the list or type your own and press Enter</span>
         {% if form.skills.errors %}<div class="error">{{ form.skills.errors.0 }}</div>{% endif %}
       </div>
       <div class="button-row">
@@ -97,13 +123,11 @@
 </div>
 
 <style>
-.skills-autocomplete-wrapper {
+.location-autocomplete-wrapper {
   position: relative;
   width: 100%;
 }
-.skills-autocomplete-wrapper input[type="text"] {
-  width: 100%;
-}
+.location-autocomplete-wrapper input[type="text"] { width: 100%; }
 .skills-dropdown {
   display: none;
   position: absolute;
@@ -121,107 +145,310 @@
   overflow-y: auto;
   box-shadow: 0 4px 12px rgba(0,0,0,.08);
 }
-.skills-dropdown li {
-  padding: .5rem .75rem;
-  cursor: pointer;
-  font-size: .95rem;
+.skills-dropdown li { padding: .5rem .75rem; cursor: pointer; font-size: .95rem; }
+.skills-dropdown li:hover, .skills-dropdown li.active { background: #eff6ff; color: #1d4ed8; }
+
+/* Tag Picker */
+.tag-picker {
+  border: 1px solid #cbd5e1;
+  border-radius: .5rem;
+  padding: .5rem .6rem .3rem;
+  background: #fff;
+  position: relative;
+  cursor: text;
+  min-height: 2.6rem;
 }
-.skills-dropdown li:hover,
-.skills-dropdown li.active {
+.tag-picker:focus-within { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+.tag-picker__tags { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .3rem; }
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
   background: #eff6ff;
-  color: #1d4ed8;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  padding: .2rem .65rem;
+  font-size: .85rem;
+  font-weight: 500;
 }
+.tag-chip__remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #93c5fd;
+  font-size: .9rem;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+.tag-chip__remove:hover { color: #1e40af; }
+.tag-picker__input {
+  border: none;
+  outline: none;
+  font-size: .95rem;
+  padding: .2rem .1rem;
+  min-width: 180px;
+  background: transparent;
+  width: 100%;
+}
+.tag-picker__dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: -1px;
+  right: -1px;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-top: none;
+  border-radius: 0 0 .5rem .5rem;
+  list-style: none;
+  margin: 0;
+  padding: .25rem 0;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0,0,0,.08);
+}
+.tag-picker__dropdown li {
+  padding: .55rem .85rem;
+  cursor: pointer;
+  font-size: .93rem;
+  color: #1e293b;
+}
+.tag-picker__dropdown li:hover,
+.tag-picker__dropdown li.active { background: #eff6ff; color: #1d4ed8; }
+.tag-picker__dropdown li.custom-entry { font-style: italic; color: #475569; }
+
+.tag-picker--lg .tag-chip {
+  font-size: 1rem;
+  padding: .35rem .9rem;
+  gap: .4rem;
+}
+.tag-picker--lg .tag-chip__remove { font-size: 1.05rem; }
 </style>
 
 <script>
 (function () {
   const SKILLS = [
-    // Academic
-    'Algebra', 'Biology', 'Calculus', 'Chemistry', 'Economics', 'English',
-    'Geometry', 'History', 'Literature', 'Math', 'Physics', 'Reading',
-    'Science', 'Statistics', 'Writing',
-    // Computer & Tech
-    'Adobe Photoshop', 'Coding', 'Computer Skills', 'Cybersecurity',
-    'Data Analysis', 'Data Entry', 'Database Management', 'Excel',
-    'Google Sheets', 'Google Slides', 'Graphic Design', 'IT Support',
-    'Microsoft Office', 'PowerPoint', 'Programming', 'Python',
-    'Social Media', 'Typing', 'Video Editing', 'Web Design',
-    'Word Document',
-    // Soft Skills
-    'Adaptability', 'Attention to Detail', 'Collaborative', 'Communicative',
-    'Conflict Resolution', 'Creative Thinking', 'Critical Thinking',
-    'Dependable', 'Empathy', 'Fast Learner', 'Flexibility', 'Leadership',
-    'Multitasking', 'Organization', 'Patience', 'Problem-Solving',
-    'Public Speaking', 'Quick-Thinking', 'Reliability', 'Teamwork',
-    'Time Management',
-    // Volunteer & Community
-    'Accounting', 'Administration', 'Animal Care', 'Arts and Crafts',
-    'Career Counseling', 'Coaching', 'Community Outreach', 'Construction',
-    'Cooking', 'CPR', 'Customer Service', 'Driving', 'Editing',
-    'Environmental Conservation', 'Event Planning', 'First Aid',
-    'Fitness Training', 'Food Service', 'Fundraising', 'Gardening',
-    'Grant Writing', 'Healthcare Support', 'Legal Aid', 'Logistics',
-    'Marketing', 'Mentoring', 'Music', 'Painting', 'Photography',
-    'Project Management', 'Research', 'Teaching', 'Translation', 'Tutoring'
-  ];
+    'Accounting','Adaptability','Administration','Adobe Photoshop','Animal Care',
+    'Arts and Crafts','Attention to Detail','Biology','Calculus','Career Counseling',
+    'Chemistry','Coaching','Coding','Collaborative','Communication','Community Outreach',
+    'Computer Architecture','Computer Building','Computer Skills','Conflict Resolution',
+    'Construction','Cooking','CPR','Creative Thinking','Critical Thinking',
+    'Customer Service','Cybersecurity','Data Analysis','Data Entry','Database Management',
+    'Dependable','Driving','Economics','Editing','Empathy','English',
+    'Environmental Conservation','Event Planning','Excel','Fast Learner','First Aid',
+    'Fitness Training','Flexibility','Food Service','Fundraising','Gardening',
+    'Google Sheets','Google Slides','Grant Writing','Graphic Design','Healthcare Support',
+    'History','IT Support','Leadership','Legal Aid','Literature','Logistics',
+    'Marketing','Math','Mentoring','Microsoft Office','Multitasking','Music',
+    'Organization','Painting','Patience','Photography','Physics','PowerPoint',
+    'Problem-Solving','Programming','Project Management','Public Speaking','Python',
+    'Quick-Thinking','Reading','Reliability','Research','Science','Social Media',
+    'Statistics','Teaching','Teamwork','Time Management','Translation','Tutoring',
+    'Typing','Video Editing','Web Design','Word Document','Writing'
+  ].sort((a, b) => a.localeCompare(b));
 
-  const input = document.getElementById('{{ form.skills.id_for_label }}');
-  const dropdown = document.getElementById('skills-dropdown');
+  const INTERESTS = [
+    'Animal Welfare','Arts and Culture','Children and Youth','Civil Rights',
+    'Climate Change','Community Development','Disability Services','Disaster Relief',
+    'Early Childhood Education','Economic Development','Education','Elderly Care',
+    'Environmental Conservation','Food and Hunger','Healthcare','Homelessness',
+    'Housing','Human Rights','Immigration','Job Training','LGBTQ+ Support',
+    'Literacy','Mental Health','Mentoring','Military and Veterans',
+    'Nature and Wildlife','Poverty Relief','Public Health','Racial Justice',
+    'Recreation and Sports','Religious and Faith','Rural Development',
+    'Science and Technology','Social Justice','Special Needs','STEM Education',
+    'Substance Abuse','Sustainability','Technology Access','Violence Prevention',
+    'Voter Rights','Women Empowerment','Youth Development'
+  ].sort((a, b) => a.localeCompare(b));
 
-  if (!input || !dropdown) return;
+  function initTagPicker(hiddenId, searchId, tagsId, dropdownId, LIST) {
+    const hidden   = document.getElementById(hiddenId);
+    const search   = document.getElementById(searchId);
+    const tagsEl   = document.getElementById(tagsId);
+    const dropdown = document.getElementById(dropdownId);
+    if (!hidden || !search || !tagsEl || !dropdown) return;
 
-  function getCurrentToken() {
-    const parts = input.value.split(',');
-    return parts[parts.length - 1].trim().toLowerCase();
+    let selected = hidden.value
+      ? hidden.value.split(',').map(s => s.trim()).filter(Boolean)
+      : [];
+
+    function syncHidden() {
+      hidden.value = selected.join(', ');
+    }
+
+    function renderTags() {
+      tagsEl.innerHTML = selected.map(s =>
+        `<span class="tag-chip">${s}<button type="button" class="tag-chip__remove" data-val="${s}" aria-label="Remove ${s}">&times;</button></span>`
+      ).join('');
+    }
+
+    function showDropdown(query) {
+      const q = query.trim().toLowerCase();
+      const available = LIST.filter(s => !selected.map(x => x.toLowerCase()).includes(s.toLowerCase()));
+      let results;
+      if (!q) {
+        results = available.slice(0, 5);
+      } else {
+        results = available
+          .filter(s => s.toLowerCase().includes(q))
+          .sort((a, b) => {
+            const aS = a.toLowerCase().startsWith(q);
+            const bS = b.toLowerCase().startsWith(q);
+            if (aS && !bS) return -1;
+            if (!aS && bS) return 1;
+            return a.localeCompare(b);
+          })
+          .slice(0, 5);
+      }
+
+      const items = [...results];
+      // offer custom entry if typed text not already selected/in list
+      const exactMatch = LIST.some(s => s.toLowerCase() === q);
+      const alreadySelected = selected.some(s => s.toLowerCase() === q);
+      if (q && !exactMatch && !alreadySelected) {
+        items.push({ custom: true, label: `Add "${query.trim()}"`, value: query.trim() });
+      }
+
+      if (!items.length) { hideDropdown(); return; }
+
+      dropdown.innerHTML = items.map(item => {
+        if (item.custom) return `<li class="custom-entry" data-val="${item.value}">${item.label}</li>`;
+        return `<li data-val="${item}">${item}</li>`;
+      }).join('');
+      dropdown.style.display = 'block';
+    }
+
+    function hideDropdown() {
+      dropdown.style.display = 'none';
+      dropdown.innerHTML = '';
+    }
+
+    function addTag(val) {
+      const clean = val.trim();
+      if (!clean || selected.some(s => s.toLowerCase() === clean.toLowerCase())) return;
+      selected.push(clean);
+      syncHidden();
+      renderTags();
+      search.value = '';
+      showDropdown('');
+      search.focus();
+    }
+
+    function removeTag(val) {
+      selected = selected.filter(s => s.toLowerCase() !== val.toLowerCase());
+      syncHidden();
+      renderTags();
+    }
+
+    // init existing tags
+    renderTags();
+
+    search.addEventListener('focus', () => showDropdown(search.value));
+    search.addEventListener('input', () => showDropdown(search.value));
+
+    search.addEventListener('keydown', (e) => {
+      const items = dropdown.querySelectorAll('li');
+      const active = dropdown.querySelector('li.active');
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const next = active ? active.nextElementSibling : items[0];
+        if (active) active.classList.remove('active');
+        if (next) next.classList.add('active');
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prev = active ? active.previousElementSibling : items[items.length - 1];
+        if (active) active.classList.remove('active');
+        if (prev) prev.classList.add('active');
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (active) { addTag(active.dataset.val); }
+        else if (search.value.trim()) { addTag(search.value); }
+      } else if (e.key === 'Escape') {
+        hideDropdown();
+      }
+    });
+
+    search.addEventListener('blur', () => setTimeout(hideDropdown, 150));
+
+    dropdown.addEventListener('mousedown', (e) => {
+      const li = e.target.closest('li');
+      if (li) addTag(li.dataset.val);
+    });
+
+    tagsEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.tag-chip__remove');
+      if (btn) removeTag(btn.dataset.val);
+    });
+
+    // clicking anywhere in the picker box focuses the input
+    document.getElementById(searchId.replace('-search', '-picker'))
+      ?.addEventListener('click', (e) => {
+        if (!e.target.closest('.tag-chip__remove')) search.focus();
+      });
   }
 
-  function getExisting() {
-    return input.value.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-  }
+  initTagPicker('id_skills',    'skills-search',    'skills-tags',    'skills-dropdown',    SKILLS);
+  initTagPicker('id_interests', 'interests-search', 'interests-tags', 'interests-dropdown', INTERESTS);
+})();
+</script>
 
-  function showSuggestions(token) {
-    if (token.length < 1) { hide(); return; }
-    const existing = getExisting();
-    const filtered = SKILLS
-      .filter(s => s.toLowerCase().includes(token) && !existing.includes(s.toLowerCase()))
-      .sort((a, b) => {
-        const aStarts = a.toLowerCase().startsWith(token);
-        const bStarts = b.toLowerCase().startsWith(token);
-        if (aStarts && !bStarts) return -1;
-        if (!aStarts && bStarts) return 1;
-        return a.localeCompare(b);
+<script>
+(function () {
+  const locationInput = document.getElementById('id_location');
+  const locationDropdown = document.getElementById('location-dropdown');
+  if (!locationInput || !locationDropdown) return;
+
+  let debounceTimer = null;
+  let currentQuery = '';
+
+  function showLocationSuggestions(query) {
+    if (query.length < 2) { hideLocation(); return; }
+
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=6&countrycodes=us&featuretype=city&viewbox=-75.5,38.9,-74.0,41.4&bounded=0`;
+
+    fetch(url, { headers: { 'Accept-Language': 'en' } })
+      .then(r => r.json())
+      .then(data => {
+        if (query !== currentQuery) return;
+        const seen = new Set();
+        const results = [];
+        for (const item of data) {
+          const addr = item.address || {};
+          const city = addr.city || addr.town || addr.village || addr.hamlet || addr.county || '';
+          const state = addr.state || '';
+          if (!city || !state) continue;
+          const label = `${city}, ${state}`;
+          if (seen.has(label)) continue;
+          seen.add(label);
+          results.push(label);
+          if (results.length >= 6) break;
+        }
+        if (!results.length) { hideLocation(); return; }
+        locationDropdown.innerHTML = results.map(r => `<li data-value="${r}">${r}</li>`).join('');
+        locationDropdown.style.width = locationInput.offsetWidth + 'px';
+        locationDropdown.style.display = 'block';
       })
-      .slice(0, 8);
-
-    if (filtered.length === 0) { hide(); return; }
-
-    dropdown.innerHTML = filtered
-      .map(s => `<li data-skill="${s}">${s}</li>`)
-      .join('');
-    dropdown.style.width = input.offsetWidth + 'px';
-    dropdown.style.display = 'block';
+      .catch(() => hideLocation());
   }
 
-  function hide() {
-    dropdown.style.display = 'none';
-    dropdown.innerHTML = '';
+  function hideLocation() {
+    locationDropdown.style.display = 'none';
+    locationDropdown.innerHTML = '';
   }
 
-  function pickSkill(skill) {
-    const parts = input.value.split(',');
-    parts[parts.length - 1] = ' ' + skill;
-    input.value = parts.join(',') + ', ';
-    hide();
-    input.focus();
-  }
+  locationInput.addEventListener('input', function () {
+    currentQuery = this.value.trim();
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => showLocationSuggestions(currentQuery), 300);
+  });
 
-  input.addEventListener('input', () => showSuggestions(getCurrentToken()));
-
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { hide(); return; }
-    const items = dropdown.querySelectorAll('li');
+  locationInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { hideLocation(); return; }
+    const items = locationDropdown.querySelectorAll('li');
     if (!items.length) return;
-    const active = dropdown.querySelector('li.active');
+    const active = locationDropdown.querySelector('li.active');
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       const next = active ? active.nextElementSibling : items[0];
@@ -234,15 +461,19 @@
       if (prev) prev.classList.add('active');
     } else if (e.key === 'Enter' && active) {
       e.preventDefault();
-      pickSkill(active.dataset.skill);
+      locationInput.value = active.dataset.value;
+      hideLocation();
     }
   });
 
-  input.addEventListener('blur', () => setTimeout(hide, 150));
+  locationInput.addEventListener('blur', () => setTimeout(hideLocation, 150));
 
-  dropdown.addEventListener('mousedown', (e) => {
+  locationDropdown.addEventListener('mousedown', function (e) {
     const li = e.target.closest('li');
-    if (li) pickSkill(li.dataset.skill);
+    if (li) {
+      locationInput.value = li.dataset.value;
+      hideLocation();
+    }
   });
 })();
 </script>
