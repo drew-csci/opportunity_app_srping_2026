@@ -396,18 +396,15 @@ def organization_profile(request, org_id):
     elif request.user.user_type == 'organization' and request.user.id == org_id:
         unread_message_count = Message.objects.filter(recipient=request.user, is_read=False).count()
 
-    # Get current/open opportunities
     current_opportunities = Opportunity.objects.filter(
         organization=organization,
-        status='open'
-    ).order_by('-date_posted')
-    
-    # Get past/closed opportunities
+        is_active=True
+    ).order_by('-posted_date')
+
     past_opportunities = Opportunity.objects.filter(
         organization=organization,
-        status='closed'
-    ).order_by('-date_posted')
-    opportunities = Opportunity.objects.filter(organization=organization, is_active=True).order_by('-created_at')
+        is_active=False
+    ).order_by('-posted_date')
 
     return render(request, 'pages/organization_profile.html', {
         'organization': organization,
@@ -415,7 +412,6 @@ def organization_profile(request, org_id):
         'is_following': is_following,
         'current_opportunities': current_opportunities,
         'past_opportunities': past_opportunities,
-        'opportunities': opportunities,
         'impact_metrics': profile.impact_metrics.all(),
         'unread_message_count': unread_message_count,
     })
@@ -816,3 +812,22 @@ def student_notifications(request):
         return redirect('screen1')
     notifications = Notification.objects.filter(recipient=request.user)
     return render(request, 'pages/student_notifications.html', {'notifications': notifications})
+
+
+@login_required
+def contact_us(request):
+    success = False
+    initial = {}
+    if request.user.is_authenticated:
+        initial['role'] = request.user.user_type if request.user.user_type in ('student', 'organization') else ''
+
+    if request.method == 'POST':
+        form = ContactForm(request.POST)
+        if form.is_valid():
+            form.save()
+            success = True
+            form = ContactForm(initial=initial)
+    else:
+        form = ContactForm(initial=initial)
+
+    return render(request, 'pages/contact_us.html', {'form': form, 'success': success})

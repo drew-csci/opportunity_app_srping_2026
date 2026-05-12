@@ -4,6 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
+        ('pages', '0010_merge_20260512_1507'),
         ('pages', '0009_reconcile_schema'),
     ]
 
