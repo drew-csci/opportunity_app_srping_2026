@@ -1,3 +1,6 @@
+# macOS
+.DS_Store
+
 # Ignore Python cache and virtual environments
 __pycache__/
 *.pyc
@@ -8,14 +11,6 @@ venv/
 ENV/
 env/
 .aider*
-.env
-.env
-.env
-.env
-.env
-.env
-.env
-.env
 .env
 # Database files
 *.sqlite3
