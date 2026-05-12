@@ -25,6 +25,7 @@
             {% elif user.user_type == 'organization' %}
             <li><a href="{% url 'screen1' %}">Opportunities</a></li>
             <li><a href="{% url 'organization_applications' %}">Review Applications</a></li>
+            <li><a href="{% url 'contact_us' %}">Contact Us</a></li>
             <li><a href="{% url 'organization_profile' user.id %}">My Profile</a></li>
             {% endif %}
             <li class="divider"></li>
