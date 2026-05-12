@@ -184,3 +184,43 @@ class MessageReplyForm(forms.Form):
             )
         
         return content
+
+
+class ReportForm(forms.Form):
+    """Form for users to report inappropriate content."""
+    
+    REASON_CHOICES = [
+        ('spam', 'Spam'),
+        ('harassment', 'Harassment or Bullying'),
+        ('misinformation', 'Misleading or False Information'),
+        ('other', 'Other'),
+    ]
+    
+    reason = forms.ChoiceField(
+        choices=REASON_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+        }),
+        label='Reason for Report',
+        help_text='Please select the reason you are reporting this content'
+    )
+    
+    notes = forms.CharField(
+        max_length=1000,
+        required=False,
+        widget=forms.Textarea(attrs={
+            'rows': 4,
+            'placeholder': 'Please provide additional details (optional)...',
+            'class': 'form-control',
+        }),
+        label='Additional Details',
+        help_text='Optional: Provide any additional context or details about your report'
+    )
+    
+    def clean_reason(self):
+        """Ensure reason is a valid choice."""
+        reason = self.cleaned_data.get('reason')
+        valid_reasons = [choice[0] for choice in self.REASON_CHOICES]
+        if reason not in valid_reasons:
+            raise forms.ValidationError('Please select a valid reason.')
+        return reason
