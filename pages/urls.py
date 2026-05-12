@@ -7,7 +7,6 @@ urlpatterns = [
     path('screen2/', views.screen2, name='screen2'),
     path('screen3/', views.screen3, name='screen3'),
     path('achievements/', views.student_achievements, name='student_achievements'),
-<<<<<<< HEAD
     path('opportunities/', views.opportunity_list, name='opportunity_list'),
     path('opportunities/<int:opportunity_id>/', views.opportunity_detail, name='opportunity_detail'),
     path('opportunities/<int:opportunity_id>/apply/', views.apply_to_opportunity, name='apply_to_opportunity'),
@@ -16,8 +15,6 @@ urlpatterns = [
     path('organization/applications/', views.organization_applications, name='organization_applications'),
     path('organization/applications/<int:application_id>/review/', views.review_application, name='review_application'),
     path('applications/<int:application_id>/remind/', views.remind_organization, name='remind_organization'),
-=======
->>>>>>> origin/main
     path('faq/', views.faq, name='faq'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('org/dashboard/', views.organization_dashboard, name='organization_dashboard'),

@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse, HttpResponseForbidden
 from django.utils import timezone
 from accounts.models import User
@@ -28,7 +29,6 @@ def screen3(request):
 
 
 @login_required
-<<<<<<< HEAD
 def opportunity_list(request):
     if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
         return redirect('screen1')
@@ -122,7 +122,7 @@ def remind_organization(request, application_id):
         return redirect('screen1')
 
     application = get_object_or_404(Application, id=application_id, student=request.user)
-    if application.status != Application.Status.PENDING:
+    if application.status.lower() not in ["pending", "applied"]:
         messages.error(request, 'Reminders can only be sent for applications that are still pending.')
         return redirect('my_applications')
 
@@ -132,8 +132,6 @@ def remind_organization(request, application_id):
 
 
 @login_required
-=======
->>>>>>> origin/main
 def student_achievements(request):
     if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
         return redirect('screen1')
@@ -408,10 +406,7 @@ def experience_delete(request, pk):
 
 @login_required
 def follow_organization(request, org_id):
-<<<<<<< HEAD
     """Follow an organization. Supports both regular POST and AJAX requests."""
-=======
->>>>>>> origin/main
     if request.user.user_type != 'student':
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'error': 'Only students can follow organizations'}, status=403)
