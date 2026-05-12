@@ -13,27 +13,27 @@ from datetime import timedelta
 from .models import Opportunity, StudentOpportunity, Student
 
 
-def create_opportunity(title, description, organization, status='open'):
+def create_opportunity(title, description, organization, is_active=True):
     """
     Create a new opportunity posted by an organization.
-    
+
     Args:
         title (str): The opportunity title
         description (str): Detailed description of the opportunity
         organization (User): The organization posting the opportunity (user_type must be 'organization')
-        status (str): 'open' or 'closed' (default: 'open')
-    
+        is_active (bool): Whether the opportunity is open for applications (default: True)
+
     Returns:
         Opportunity: The created opportunity instance
     """
     if organization.user_type != 'organization':
         raise ValueError("Organization must be a user with user_type='organization'")
-    
+
     opportunity = Opportunity.objects.create(
         title=title,
         description=description,
         organization=organization,
-        status=status
+        is_active=is_active
     )
     return opportunity
 
@@ -202,24 +202,24 @@ def get_student_all_opportunities(student):
 def get_open_opportunities():
     """
     Get all open opportunities available to students.
-    
+
     Returns:
-        QuerySet: Opportunity objects with status='open'
+        QuerySet: Opportunity objects with is_active=True
     """
-    return Opportunity.objects.filter(status='open').select_related('organization').order_by('-date_posted')
+    return Opportunity.objects.filter(is_active=True).select_related('organization').order_by('-created_at')
 
 
 def close_opportunity(opportunity):
     """
     Close an opportunity so students can't join.
-    
+
     Args:
         opportunity (Opportunity): The opportunity to close
-    
+
     Returns:
         Opportunity: Updated opportunity instance
     """
-    opportunity.status = 'closed'
+    opportunity.is_active = False
     opportunity.save()
     return opportunity
 

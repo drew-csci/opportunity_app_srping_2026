@@ -6,7 +6,8 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pages', '0002_opportunity_application'),
+        ('pages', '0002_opportunity_studentopportunity'),
+        ('pages', '0003_sync_legacy_application_schema'),
     ]
 
     operations = [
