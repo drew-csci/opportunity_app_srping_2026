@@ -289,24 +289,6 @@ class Message(models.Model):
         return cls.objects.filter(sender=volunteer, is_read=False).count()
 
 
-class Notification(models.Model):
-    """Model for student notifications."""
-    recipient = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='notifications',
-    )
-    message = models.TextField()
-    is_read = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return f"Notification for {self.recipient}: {self.message[:50]}"
-
-
 class ContactMessage(models.Model):
     ROLE_CHOICES = [
         ('student', 'Volunteer / Student'),
@@ -329,3 +311,21 @@ class ContactMessage(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} – {self.inquiry_type} ({self.created_at.date()})"
+
+
+class Notification(models.Model):
+    """Model for student notifications."""
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='notifications',
+    )
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Notification for {self.recipient}: {self.message[:50]}"

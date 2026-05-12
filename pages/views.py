@@ -812,3 +812,22 @@ def student_notifications(request):
         return redirect('screen1')
     notifications = Notification.objects.filter(recipient=request.user)
     return render(request, 'pages/student_notifications.html', {'notifications': notifications})
+
+
+@login_required
+def contact_us(request):
+    success = False
+    initial = {}
+    if request.user.is_authenticated:
+        initial['role'] = request.user.user_type if request.user.user_type in ('student', 'organization') else ''
+
+    if request.method == 'POST':
+        form = ContactForm(request.POST)
+        if form.is_valid():
+            form.save()
+            success = True
+            form = ContactForm(initial=initial)
+    else:
+        form = ContactForm(initial=initial)
+
+    return render(request, 'pages/contact_us.html', {'form': form, 'success': success})

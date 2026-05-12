@@ -42,6 +42,7 @@ urlpatterns = [
     path('student/dashboard/', views.student_dashboard, name='student_dashboard'),
     path('student/notifications/', views.student_notifications, name='student_notifications'),
     path('my-applications/', views.my_applications, name='my_applications'),
+    path('contact/', views.contact_us, name='contact_us'),
     path('reports/submit/', views.submit_report, name='submit_report'),
     path('reports/queue/', views.report_queue, name='report_queue'),
 ]
