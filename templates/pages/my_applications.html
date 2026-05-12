@@ -17,6 +17,12 @@
                 data-message="{{ application.message|escapejs }}"
               >View Tracking</button>
               <a href="{% url 'opportunity_detail' application.opportunity.id %}" class="btn">Opportunity Info</a>
+              {% if application.status == 'pending' %}
+                <form method="post" action="{% url 'remind_organization' application.id %}" style="display:inline">
+                  {% csrf_token %}
+                  <button type="submit" class="btn">Remind About Me</button>
+                </form>
+              {% endif %}
             </div>
           </article>
         {% endfor %}
