@@ -21,3 +21,5 @@ env/
 *.sqlite3
 # Static files
 staticfiles/
+# macOS
+.DS_Store
