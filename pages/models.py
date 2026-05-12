@@ -329,27 +329,3 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"Notification for {self.recipient}: {self.message[:50]}"
-
-
-class ContactMessage(models.Model):
-    ROLE_CHOICES = [
-        ('student', 'Volunteer / Student'),
-        ('organization', 'Organization'),
-    ]
-    INQUIRY_CHOICES = [
-        ('general', 'General Inquiry'),
-        ('technical', 'Technical Support'),
-        ('organization', 'Organization Support'),
-    ]
-
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
-    email = models.EmailField()
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
-    inquiry_type = models.CharField(max_length=20, choices=INQUIRY_CHOICES)
-    subject = models.CharField(max_length=200)
-    message = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.first_name} {self.last_name} – {self.inquiry_type} ({self.created_at.date()})"
