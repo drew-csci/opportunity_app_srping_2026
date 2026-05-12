@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
   <section class="auth-shell">
     <section class="auth-card">
@@ -23,6 +24,12 @@
         </div>
         <button class="btn primary" type="submit">Sign in</button>
       </form>
+
+      <div class="auth-divider"><span>or</span></div>
+      <a href="{% url 'google_login' %}?next={% url 'dashboard' %}" class="btn btn-google">
+        <img src="{% static 'images/google-logo.svg' %}" alt="" width="20" height="20">
+        Sign in with Google
+      </a>
 
       <div class="auth-links">
         <a href="{% url 'password_reset' %}">Forgot password?</a>
