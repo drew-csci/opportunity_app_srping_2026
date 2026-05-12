@@ -181,8 +181,8 @@ def remind_organization(request, application_id):
         return redirect('screen1')
 
     application = get_object_or_404(Application, id=application_id, student=request.user)
-    if application.status != Application.Status.PENDING:
-        messages.error(request, 'Reminders can only be sent for applications that are still pending.')
+    if application.status != 'pending':
+        messages.error(request, 'Reminders are only for pending applications.')
         return redirect('my_applications')
 
     organization = application.opportunity.organization
@@ -239,6 +239,12 @@ def review_application(request, application_id):
             if application.responded_date is None:
                 application.responded_date = timezone.now()
             application.save()
+            from django.db import connection as db_conn
+            with db_conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO pages_notification (recipient_id, message, is_read, created_at, notification_type) VALUES (%s, %s, %s, NOW(), %s)",
+                    [application.student.id, f"Your application to '{application.opportunity.title}' has been {decision}.", False, decision]
+                )
             messages.success(request, f'Application status updated.')
             return redirect('organization_applications')
         messages.error(request, 'Please choose a valid decision.')
@@ -331,6 +337,12 @@ def accept_application(request, application_id):
     application.status = 'accepted'
     application.responded_date = timezone.now()
     application.save()
+    from pages.models import Notification
+    Notification.objects.create(
+            recipient=application.student,
+            message=f"Your application to '{application.opportunity.title}' has been accepted!",
+            is_read=False,
+        )
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'success': True, 'status': 'accepted', 'message': f'{application.student.display_name} application accepted!'})
     return redirect('applicant_profile', applicant_id=application.student.id)
@@ -344,6 +356,12 @@ def decline_application(request, application_id):
     application.status = 'declined'
     application.responded_date = timezone.now()
     application.save()
+    from django.db import connection
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "INSERT INTO pages_notification (recipient_id, message, is_read, created_at, notification_type) VALUES (%s, %s, %s, CURRENT_TIMESTAMP, %s)",
+            [application.student.id, f"Your application to '{application.opportunity.title}' has been declined.", False, "declined"]
+        )
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'success': True, 'status': 'declined', 'message': f'{application.student.display_name} application declined.'})
     return redirect('applicant_profile', applicant_id=application.student.id)

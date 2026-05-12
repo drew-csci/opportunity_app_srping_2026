@@ -1,4 +1,4 @@
-# Generated migration for Opportunity and StudentOpportunity models
+# Generated migration for StudentOpportunity model
 
 import django.db.models.deletion
 from django.conf import settings
@@ -8,25 +8,10 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pages', '0001_initial'),
+        ('pages', '0002_opportunity'),
     ]
 
     operations = [
-        migrations.CreateModel(
-            name='Opportunity',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=200)),
-                ('description', models.TextField()),
-                ('status', models.CharField(choices=[('open', 'Open'), ('closed', 'Closed')], default='open', max_length=20)),
-                ('date_posted', models.DateTimeField(auto_now_add=True)),
-                ('date_updated', models.DateTimeField(auto_now=True)),
-                ('organization', models.ForeignKey(limit_choices_to={'user_type': 'organization'}, on_delete=django.db.models.deletion.CASCADE, related_name='posted_opportunities', to=settings.AUTH_USER_MODEL)),
-            ],
-            options={
-                'ordering': ['-date_posted'],
-            },
-        ),
         migrations.CreateModel(
             name='StudentOpportunity',
             fields=[
