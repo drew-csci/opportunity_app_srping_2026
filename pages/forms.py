@@ -1,80 +1,7 @@
 from django import forms
-from .models import Achievement, StudentOpportunity, VolunteerProfile, VolunteerExperience, Opportunity
-from .models import Achievement, Application
-from .models import VolunteerProfile, VolunteerExperience
-from datetime import date
+from django.utils import timezone
 
-
-class OpportunityForm(forms.ModelForm):
-    """
-    Form for creating and editing volunteer/internship opportunities.
-    Reusable for both organization posting and editing existing opportunities.
-    """
-    application_deadline = forms.DateField(
-        required=False,
-        widget=forms.DateInput(attrs={'type': 'date'}),
-        help_text='When students must submit their applications'
-    )
-    
-    class Meta:
-        model = Opportunity
-        fields = ['title', 'description', 'required_skills', 'location', 'opportunity_type', 
-                  'duration', 'status', 'application_deadline']
-        widgets = {
-            'title': forms.TextInput(attrs={
-                'placeholder': 'E.g., Summer Volunteer Program Manager',
-                'class': 'form-control',
-            }),
-            'description': forms.Textarea(attrs={
-                'rows': 6,
-                'placeholder': 'Describe the role, responsibilities, and what success looks like...',
-                'class': 'form-control',
-            }),
-            'required_skills': forms.Textarea(attrs={
-                'rows': 4,
-                'placeholder': 'E.g., Communication, Project Management, Teamwork',
-                'class': 'form-control',
-            }),
-            'location': forms.TextInput(attrs={
-                'placeholder': 'E.g., San Francisco, CA or Remote',
-                'class': 'form-control',
-            }),
-            'opportunity_type': forms.TextInput(attrs={
-                'placeholder': 'E.g., Volunteer, Internship, Fellowship',
-                'class': 'form-control',
-            }),
-            'duration': forms.TextInput(attrs={
-                'placeholder': 'E.g., 3 months, Summer 2026, Ongoing',
-                'class': 'form-control',
-            }),
-            'status': forms.Select(attrs={
-                'class': 'form-control',
-            }),
-        }
-        labels = {
-            'title': 'Opportunity Title',
-            'description': 'Description',
-            'required_skills': 'Required Skills',
-            'location': 'Location',
-            'opportunity_type': 'Opportunity Type',
-            'duration': 'Duration',
-            'status': 'Status',
-            'application_deadline': 'Application Deadline',
-        }
-    
-    def clean_application_deadline(self):
-        """Validate that application deadline is not in the past."""
-        deadline = self.cleaned_data.get('application_deadline')
-        if deadline and deadline < date.today():
-            raise forms.ValidationError('Application deadline cannot be in the past.')
-        return deadline
-    
-    def clean_required_skills(self):
-        """Ensure required_skills is filled."""
-        required_skills = self.cleaned_data.get('required_skills')
-        if not required_skills or not required_skills.strip():
-            raise forms.ValidationError('Please specify the required skills or qualifications.')
-        return required_skills
+from .models import Achievement, StudentOpportunity, Opportunity, Application, Message, VolunteerProfile, VolunteerExperience, OrganizationProfile, OrganizationImpactMetric, ContactMessage
 
 
 class AchievementForm(forms.ModelForm):
@@ -298,3 +225,27 @@ class ReportForm(forms.Form):
         if reason not in valid_reasons:
             raise forms.ValidationError('Please select a valid reason.')
         return reason
+
+
+class ContactForm(forms.ModelForm):
+    class Meta:
+        model = ContactMessage
+        fields = ['first_name', 'last_name', 'email', 'role', 'inquiry_type', 'subject', 'message']
+        widgets = {
+            'first_name': forms.TextInput(attrs={'placeholder': 'Jane'}),
+            'last_name': forms.TextInput(attrs={'placeholder': 'Doe'}),
+            'email': forms.EmailInput(attrs={'placeholder': 'you@example.com'}),
+            'role': forms.Select(),
+            'inquiry_type': forms.Select(),
+            'subject': forms.TextInput(attrs={'placeholder': 'How can we help you?'}),
+            'message': forms.Textarea(attrs={'rows': 5, 'placeholder': 'Describe your question or issue in detail...'}),
+        }
+        labels = {
+            'first_name': 'First Name',
+            'last_name': 'Last Name',
+            'email': 'Email Address',
+            'role': 'I am a...',
+            'inquiry_type': 'Inquiry Type',
+            'subject': 'Subject',
+            'message': 'Message',
+        }
