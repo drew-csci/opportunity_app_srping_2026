@@ -396,18 +396,15 @@ def organization_profile(request, org_id):
     elif request.user.user_type == 'organization' and request.user.id == org_id:
         unread_message_count = Message.objects.filter(recipient=request.user, is_read=False).count()
 
-    # Get current/open opportunities
     current_opportunities = Opportunity.objects.filter(
         organization=organization,
-        status='open'
-    ).order_by('-date_posted')
-    
-    # Get past/closed opportunities
+        is_active=True
+    ).order_by('-posted_date')
+
     past_opportunities = Opportunity.objects.filter(
         organization=organization,
-        status='closed'
-    ).order_by('-date_posted')
-    opportunities = Opportunity.objects.filter(organization=organization, is_active=True).order_by('-created_at')
+        is_active=False
+    ).order_by('-posted_date')
 
     return render(request, 'pages/organization_profile.html', {
         'organization': organization,
@@ -415,7 +412,6 @@ def organization_profile(request, org_id):
         'is_following': is_following,
         'current_opportunities': current_opportunities,
         'past_opportunities': past_opportunities,
-        'opportunities': opportunities,
         'impact_metrics': profile.impact_metrics.all(),
         'unread_message_count': unread_message_count,
     })
