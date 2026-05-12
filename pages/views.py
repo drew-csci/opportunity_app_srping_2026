@@ -182,8 +182,8 @@ def remind_organization(request, application_id):
         return redirect('screen1')
 
     application = get_object_or_404(Application, id=application_id, student=request.user)
-    if application.status.lower() not in ["pending", "applied"]:
-        messages.error(request, 'Reminders can only be sent for applications that are still pending.')
+    if application.status != 'pending':
+        messages.error(request, 'Reminders are only for pending applications.')
         return redirect('my_applications')
 
     organization = application.opportunity.organization
@@ -246,12 +246,12 @@ def review_application(request, application_id):
             if application.responded_date is None:
                 application.responded_date = timezone.now()
             application.save()
-            from django.db import connection as db_conn
-            with db_conn.cursor() as cur:
-                cur.execute(
-                    "INSERT INTO pages_notification (recipient_id, message, is_read, created_at, notification_type) VALUES (%s, %s, %s, CURRENT_TIMESTAMP, %s)",
-                    [application.student.id, f"Your application to '{application.opportunity.title}' has been {decision}.", False, decision]
-                )
+            from pages.models import Notification
+            Notification.objects.create(
+                recipient=application.student,
+                message=f"Your application to '{application.opportunity.title}' has been {decision}.",
+                is_read=False,
+            )
             messages.success(request, f'Application status updated.')
             return redirect('organization_applications')
         messages.error(request, 'Please choose a valid decision.')
