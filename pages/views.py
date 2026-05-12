@@ -251,11 +251,10 @@ def faq(request):
 
 @login_required
 def dashboard(request):
+    if hasattr(request.user, 'user_type') and request.user.user_type == 'organization':
+        return redirect('organization_dashboard')
     role = request.user.user_type.title() if hasattr(request.user, 'user_type') else 'User'
     context = {'role': role}
-    if hasattr(request.user, 'user_type') and request.user.user_type == 'organization':
-        unread_count = Message.objects.filter(recipient=request.user, is_read=False).count()
-        context['unread_message_count'] = unread_count
     return render(request, 'pages/dashboard.html', context)
 
 
@@ -297,16 +296,33 @@ def mark_opportunity_pending(request, student_opportunity_id):
 def organization_dashboard(request):
     if request.user.user_type != 'organization':
         return redirect('screen1')
-    recent_applications = Application.objects.filter(opportunity__organization=request.user).select_related('student', 'opportunity').order_by('-applied_date')[:10]
-    pending_count = Application.objects.filter(opportunity__organization=request.user, status='pending').count()
-    accepted_count = Application.objects.filter(opportunity__organization=request.user, status='accepted').count()
-    opportunities_count = Opportunity.objects.filter(organization=request.user, is_active=True).count()
+
+    org = request.user
+    recent_applications = (
+        Application.objects.filter(opportunity__organization=org)
+        .select_related('student', 'opportunity')
+        .order_by('-applied_date')[:5]
+    )
+    pending_count = Application.objects.filter(opportunity__organization=org, status='pending').count()
+    accepted_count = Application.objects.filter(opportunity__organization=org, status='accepted').count()
+    opportunities_count = Opportunity.objects.filter(organization=org, is_active=True).count()
+    unread_message_count = Message.objects.filter(recipient=org, is_read=False).count()
+
+    full = f"{org.first_name} {org.last_name}".strip()
+    org_name = full if full else org.email.split('@')[0].replace('_', ' ').title()
+    initials_source = full or org_name
+    initials = ''.join(part[:1] for part in initials_source.split() if part)[:2].upper() or org_name[:1].upper()
+
     context = {
+        'org': org,
+        'org_name': org_name,
+        'initials': initials,
         'recent_applications': recent_applications,
         'pending_count': pending_count,
         'accepted_count': accepted_count,
         'total_volunteers': accepted_count,
         'opportunities_count': opportunities_count,
+        'unread_message_count': unread_message_count,
     }
     return render(request, 'pages/organization_dashboard.html', context)
 
