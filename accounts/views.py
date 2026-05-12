@@ -19,6 +19,7 @@ class RegisterView(FormView):
         user_type = self.request.GET.get('type') or self.request.session.get('selected_user_type')
         if user_type:
             initial['user_type'] = user_type
+            self.request.session['selected_user_type'] = user_type
         return initial
 
 class CustomLoginView(LoginView):
