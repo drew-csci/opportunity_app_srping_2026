@@ -1,8 +1,4 @@
 {% extends 'base.html' %}
-{% load static %}
-
-{% block title %}{{ organization.display_name }} - Organization Profile{% endblock %}
-
 {% block content %}
 <div class="org-profile-container">
     <!-- Organization Header -->
@@ -30,74 +26,75 @@
                 + Follow
             </button>
             {% endif %}
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Posted Opportunities Section -->
-    <div class="opportunities-section">
-        <h2>📢 Posted Opportunities</h2>
-        
-        {% if opportunities %}
-        <div class="opportunities-grid">
-            {% for opp in opportunities %}
-            <div class="opportunity-card">
-                <div class="opp-header">
-                    <h3>{{ opp.title }}</h3>
-                    <span class="opp-type-badge">{{ opp.get_opportunity_type_display }}</span>
-                </div>
-                
-                <p class="opp-description">{{ opp.description|truncatewords:20 }}</p>
-                
-                <div class="opp-details">
-                    <div class="detail-item">
-                        <span class="label">📍 Location:</span>
-                        <span class="value">{{ opp.location }}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="label">⏱️ Duration:</span>
-                        <span class="value">{{ opp.get_duration_display }}</span>
-                    </div>
-                    {% if opp.hours_per_week %}
-                    <div class="detail-item">
-                        <span class="label">🕒 Hours/Week:</span>
-                        <span class="value">{{ opp.hours_per_week }} hours</span>
-                    </div>
-                    {% endif %}
-                    <div class="detail-item">
-                        <span class="label">📅 Posted:</span>
-                        <span class="value">{{ opp.posted_date|date:"M d, Y" }}</span>
-                    </div>
-                </div>
-
-                <div class="opp-actions">
-                    {% if request.user.is_authenticated and request.user.user_type == 'student' %}
-                    <a href="{% url 'screen1' %}" class="btn btn-sm btn-primary">View & Apply</a>
-                    {% else %}
-                    <span class="text-muted">Sign in to apply</span>
-                    {% endif %}
-                </div>
-            </div>
-            {% endfor %}
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="openReportModal('profile', {{ organization.id }})" title="Report this organization">
+                <i class="bi bi-flag"></i> Report
+            </button>
         </div>
         {% else %}
-        <div class="empty-state">
-            <p class="empty-icon">📭</p>
-            <p class="empty-title">No active opportunities</p>
-            <p class="empty-subtitle">This organization hasn't posted any opportunities yet.</p>
+        <div class="follow-section">
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="openReportModal('profile', {{ organization.id }})" title="Report this organization">
+                <i class="bi bi-flag"></i> Report
+            </button>
         </div>
         {% endif %}
+      </div>
     </div>
+    {% if request.user == organization %}
+      <a class="btn profile-edit-btn" href="{% url 'organization_profile_edit' organization.id %}">Edit Profile</a>
+    {% endif %}
+  </div>
 
-    <!-- Back to Following Button -->
-    {% if request.user.user_type == 'student' and is_following %}
-    <div class="back-section">
-        <a href="{% url 'followed_organizations' %}" class="btn btn-secondary">← Back to My Organizations</a>
+  {% if request.user.user_type == 'student' %}
+    <div style="margin-top:1rem;">
+      {% if is_following %}
+        <button class="btn" id="follow-btn" data-org-id="{{ organization.id }}" data-action="unfollow">Following</button>
+      {% else %}
+        <button class="btn primary" id="follow-btn" data-org-id="{{ organization.id }}" data-action="follow">Follow</button>
+      {% endif %}
     </div>
+  {% endif %}
+
+  <section class="dash-card" style="margin-top:1.25rem">
+    <h2 class="profile-section-heading">About</h2>
+    <div class="profile-info-grid">
+      <div class="profile-info-item">
+        <span class="profile-info-label">Mission</span>
+        <span>{% if profile.mission %}{{ profile.mission|linebreaksbr }}{% else %}<span class="profile-empty">No mission added yet.</span>{% endif %}</span>
+      </div>
+      <div class="profile-info-item">
+        <span class="profile-info-label">Location</span>
+        <span>{% if profile.location %}{{ profile.location }}{% else %}<span class="profile-empty">No location added yet.</span>{% endif %}</span>
+      </div>
+      <div class="profile-info-item">
+        <span class="profile-info-label">Contact Info</span>
+        <span>{% if profile.contact_info %}{{ profile.contact_info|linebreaksbr }}{% else %}<span class="profile-empty">No contact details added yet.</span>{% endif %}</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="dash-card" style="margin-top:1.25rem">
+    <div class="section-header-row">
+      <h2>Impact Metrics</h2>
+      {% if request.user == organization %}
+        <a class="btn primary" href="{% url 'organization_profile_edit' organization.id %}">Manage Metrics</a>
+      {% endif %}
+    </div>
+    {% if impact_metrics %}
+      <div class="profile-timeline">
+        {% for metric in impact_metrics %}
+          <div class="timeline-entry">
+            <div class="timeline-role">{{ metric.title }} <span class="timeline-badge">{{ metric.value }}</span></div>
+            {% if metric.description %}<p class="timeline-desc">{{ metric.description }}</p>{% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="profile-empty">No impact metrics added yet.</p>
     {% endif %}
 </div>
 
-<style>
+<!-- Report Modal -->
+{% include "pages/partials/report_modal.html" %}
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 .org-profile-container {
@@ -408,125 +405,61 @@
         font-size: 1.4rem;
     }
 
-    .opportunities-section {
-        padding: 1.5rem;
-    }
-}
-</style>
+</div>
+{% endblock %}
 
+{% block extra_scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const followBtn = document.getElementById('follow-btn');
-    
-    if (followBtn) {
-        followBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            const orgId = this.dataset.orgId;
-            const action = this.dataset.action;
-            const url = action === 'follow' 
-                ? `/organization/${orgId}/follow/` 
-                : `/organization/${orgId}/unfollow/`;
-            
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': getCookie('csrftoken')
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update button state
-                    if (data.following) {
-                        followBtn.textContent = '✓ Following';
-                        followBtn.classList.remove('btn-follow');
-                        followBtn.classList.add('btn-unfollow');
-                        followBtn.dataset.action = 'unfollow';
-                    } else {
-                        followBtn.textContent = '+ Follow';
-                        followBtn.classList.remove('btn-unfollow');
-                        followBtn.classList.add('btn-follow');
-                        followBtn.dataset.action = 'follow';
-                    }
-                    // Show success message
-                    showNotification(data.message, 'success');
-                } else {
-                    showNotification(data.error || 'An error occurred', 'error');
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                showNotification('An error occurred. Please try again.', 'error');
-            });
-        });
-    }
+  const followBtn = document.getElementById('follow-btn');
+
+  if (followBtn) {
+    followBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      const orgId = this.dataset.orgId;
+      const action = this.dataset.action;
+      const url = action === 'follow'
+        ? `/organization/${orgId}/follow/`
+        : `/organization/${orgId}/unfollow/`;
+
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': getCookie('csrftoken')
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          if (data.following) {
+            followBtn.textContent = 'Following';
+            followBtn.classList.remove('primary');
+            followBtn.dataset.action = 'unfollow';
+          } else {
+            followBtn.textContent = 'Follow';
+            followBtn.classList.add('primary');
+            followBtn.dataset.action = 'follow';
+          }
+        }
+      });
+    });
+  }
 });
 
 function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
     }
-    return cookieValue;
+  }
+  return cookieValue;
 }
-
-function showNotification(message, type) {
-    // Create a simple notification
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 1rem 1.5rem;
-        border-radius: 8px;
-        font-weight: 500;
-        z-index: 1000;
-        animation: slideIn 0.3s ease;
-        ${type === 'success' ? 'background: #22c55e; color: white;' : 'background: #ef4444; color: white;'}
-    `;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    
-    // Remove after 3 seconds
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
-}
-
-// Add animation styles
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from {
-            transform: translateX(400px);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-    
-    @keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(400px);
-            opacity: 0;
-        }
-    }
-`;
-document.head.appendChild(style);
 </script>
 {% endblock %}

@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Applicant Profile - Opportunity App{% endblock %}
+
+{% block content %}
+<section class="dash-card">
+  <h1>{{ student.display_name }}</h1>
+  <p class="muted">{{ student.email }}</p>
+
+  <h2>Applications</h2>
+  {% if applications %}
+    <ul>
+      {% for application in applications %}
+        <li>{{ application.opportunity.title }} - {{ application.get_status_display }}</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No applications for your organization yet.</p>
+  {% endif %}
+
+  <h2>Achievements</h2>
+  {% if achievements %}
+    <ul>
+      {% for achievement in achievements %}
+        <li>{{ achievement.title }}</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No achievements posted yet.</p>
+  {% endif %}
+</section>
+{% endblock %}
