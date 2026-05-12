@@ -37,7 +37,7 @@ def screen1(request):
             Q(description__icontains=query) |
             Q(cause__icontains=query) |
             Q(location__icontains=query) |
-            Q(skills_required__icontains=query)
+            Q(required_skills__icontains=query)
         )
     if location:
         opportunities = opportunities.filter(location__icontains=location)
@@ -46,7 +46,7 @@ def screen1(request):
     if duration:
         opportunities = opportunities.filter(duration__icontains=duration)
     if skills:
-        opportunities = opportunities.filter(skills_required__icontains=skills)
+        opportunities = opportunities.filter(required_skills__icontains=skills)
     if opp_type:
         opportunities = opportunities.filter(opportunity_type=opp_type)
 
@@ -59,7 +59,7 @@ def screen1(request):
 
     skill_options = []
     seen_skills = set()
-    for skill_text in base_opportunities.exclude(skills_required='').values_list('skills_required', flat=True):
+    for skill_text in base_opportunities.exclude(required_skills='').values_list('required_skills', flat=True):
         for skill in [value.strip() for value in skill_text.split(',') if value.strip()]:
             normalized = skill.lower()
             if normalized in seen_skills:
