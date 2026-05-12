@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
   <section class="auth-shell">
     <section class="auth-card">
@@ -34,6 +35,12 @@
 
         <button class="btn primary" type="submit">Create Account</button>
       </form>
+
+      <div class="auth-divider"><span>or</span></div>
+      <a href="{% url 'google_login' %}?next={% url 'dashboard' %}" class="btn btn-google">
+        <img src="{% static 'images/google-logo.svg' %}" alt="" width="20" height="20">
+        Sign up with Google
+      </a>
 
       <div class="auth-links">
         <a href="{% url 'login' %}">Back to sign in</a>
