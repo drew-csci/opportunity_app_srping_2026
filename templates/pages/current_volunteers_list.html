@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row mb-4">
+    <div class="col-md-12">
+      <h1>Current Volunteers</h1>
+      <p class="text-muted">Manage active volunteers assigned to your opportunities.</p>
+    </div>
+  </div>
+
+  <!-- Filter Section -->
+  <div class="row mb-4">
+    <div class="col-md-12">
+      <form method="get" class="row g-3 align-items-end">
+        <div class="col-auto">
+          <label for="opportunityFilter" class="form-label">Filter by Opportunity:</label>
+          <select class="form-select" id="opportunityFilter" name="opportunity" onchange="this.form.submit();">
+            <option value="">-- All Opportunities --</option>
+            {% for opportunity in opportunities %}
+              <option value="{{ opportunity.id }}" {% if selected_opportunity_id|stringformat:"s" == opportunity.id|stringformat:"s" %}selected{% endif %}>
+                {{ opportunity.title }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Current Volunteers Section -->
+  <div class="row mb-5">
+    <div class="col-md-12">
+      <h2>Active Volunteers
+        <span class="badge bg-info">{{ volunteers_count }}</span>
+      </h2>
+      
+      {% if volunteers %}
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Volunteer Name</th>
+                <th>Opportunity Title</th>
+                <th>Start Date</th>
+                <th>Accepted Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for application in volunteers %}
+                <tr>
+                  <td>
+                    <strong>{{ application.student.display_name }}</strong><br>
+                    <small class="text-muted">{{ application.student.email }}</small>
+                  </td>
+                  <td>
+                    <strong>{{ application.opportunity.title }}</strong><br>
+                    <small class="text-muted">{{ application.opportunity.description|truncatewords:10 }}</small>
+                  </td>
+                  <td>
+                    {{ application.applied_date|date:"M d, Y" }}
+                  </td>
+                  <td>
+                    <span class="badge bg-success">
+                      <i class="bi bi-check-circle"></i> Accepted
+                    </span><br>
+                    <small class="text-muted">{{ application.responded_date|date:"M d, Y g:i A" }}</small>
+                  </td>
+                  <td>
+                    <a href="{% url 'mark_volunteer_completed' application.id %}" class="btn btn-sm btn-primary">
+                      <i class="bi bi-check2-all"></i> Mark Completed
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info" role="alert">
+          <strong>No active volunteers.</strong>
+          {% if selected_opportunity_id %}
+            No volunteers have been accepted for the selected opportunity yet.
+          {% else %}
+            No volunteers have been accepted for your opportunities yet.
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

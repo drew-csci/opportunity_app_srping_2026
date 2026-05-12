@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row">
+    <div class="col-md-8 offset-md-2">
+      <div class="card border-warning">
+        <div class="card-header bg-warning">
+          <h5 class="card-title mb-0">Confirm Mark Volunteer as Completed</h5>
+        </div>
+        <div class="card-body">
+          <p class="card-text">
+            You are about to mark <strong>{{ application.student.display_name }}</strong> as completed for the opportunity:
+          </p>
+          <div class="alert alert-info" role="alert">
+            <strong>{{ application.opportunity.title }}</strong><br>
+            <small>Organization: {{ application.opportunity.organization.display_name }}</small><br>
+            <small>Application Accepted: {{ application.responded_date|date:"M d, Y g:i A" }}</small>
+          </div>
+          <p class="card-text">
+            This action will:
+          </p>
+          <ul>
+            <li>Add this volunteer experience to <strong>{{ application.student.display_name }}'s</strong> profile</li>
+            <li>Record the organization name, role, and dates in their experience history</li>
+            <li>Mark the end date as today ({{ "now"|date:"M d, Y" }})</li>
+          </ul>
+        </div>
+        <div class="card-footer bg-light">
+          <form method="post" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success">
+              <i class="bi bi-check-circle"></i> Confirm & Mark Completed
+            </button>
+          </form>
+          <a href="{% url 'current_volunteers_list' %}" class="btn btn-secondary">
+            <i class="bi bi-x-circle"></i> Cancel
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
