@@ -1,7 +1,7 @@
 from django import forms
+from .models import Achievement, StudentOpportunity, Opportunity, VolunteerProfile, VolunteerExperience, OrganizationProfile, OrganizationImpactMetric, Application, Message
 from django.utils import timezone
 
-from .models import Achievement, StudentOpportunity, Opportunity, Application, Message, VolunteerProfile, VolunteerExperience
 
 class AchievementForm(forms.ModelForm):
     class Meta:
@@ -118,6 +118,35 @@ class VolunteerExperienceForm(forms.ModelForm):
             'start_date': forms.DateInput(attrs={'type': 'date'}),
             'end_date': forms.DateInput(attrs={'type': 'date'}),
             'description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+
+class OrganizationProfileForm(forms.ModelForm):
+    class Meta:
+        model = OrganizationProfile
+        fields = ['organization_name', 'mission', 'location', 'contact_info']
+        widgets = {
+            'mission': forms.Textarea(attrs={'rows': 4}),
+            'contact_info': forms.Textarea(attrs={'rows': 3}),
+        }
+
+
+class OrganizationImpactMetricForm(forms.ModelForm):
+    class Meta:
+        model = OrganizationImpactMetric
+        fields = ['title', 'value', 'description']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
+class ApplicationForm(forms.ModelForm):
+    class Meta:
+        model = Application
+        fields = ['message']
+        labels = {
+            'message': 'Application details',
+        }
+        widgets = {
+            'message': forms.Textarea(attrs={'rows': 6}),
         }
 
 
