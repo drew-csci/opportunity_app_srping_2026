@@ -8,8 +8,8 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.auth import get_user_model
 from django.contrib import messages
 
-from .models import Achievement, StudentOpportunity, Opportunity, OrganizationFollow, Notification, VolunteerProfile, VolunteerExperience, Application, OrganizationProfile, OrganizationImpactMetric, Message
-from .forms import AchievementForm, OpportunityForm, VolunteerProfileForm, VolunteerExperienceForm, ApplicationForm, OrganizationProfileForm, OrganizationImpactMetricForm, MessageReplyForm
+from .models import Achievement, StudentOpportunity, Opportunity, OrganizationFollow, Notification, VolunteerProfile, VolunteerExperience, Application, OrganizationProfile, OrganizationImpactMetric, Message, ContactMessage
+from .forms import AchievementForm, OpportunityForm, VolunteerProfileForm, VolunteerExperienceForm, ApplicationForm, OrganizationProfileForm, OrganizationImpactMetricForm, MessageReplyForm, ContactForm
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -37,7 +37,7 @@ def screen1(request):
             Q(description__icontains=query) |
             Q(cause__icontains=query) |
             Q(location__icontains=query) |
-            Q(skills_required__icontains=query)
+            Q(required_skills__icontains=query)
         )
     if location:
         opportunities = opportunities.filter(location__icontains=location)
@@ -46,7 +46,7 @@ def screen1(request):
     if duration:
         opportunities = opportunities.filter(duration__icontains=duration)
     if skills:
-        opportunities = opportunities.filter(skills_required__icontains=skills)
+        opportunities = opportunities.filter(required_skills__icontains=skills)
     if opp_type:
         opportunities = opportunities.filter(opportunity_type=opp_type)
 
@@ -59,7 +59,7 @@ def screen1(request):
 
     skill_options = []
     seen_skills = set()
-    for skill_text in base_opportunities.exclude(skills_required='').values_list('skills_required', flat=True):
+    for skill_text in base_opportunities.exclude(required_skills='').values_list('required_skills', flat=True):
         for skill in [value.strip() for value in skill_text.split(',') if value.strip()]:
             normalized = skill.lower()
             if normalized in seen_skills:
@@ -528,14 +528,17 @@ def volunteer_profile_edit(request):
             request.user.email = form.cleaned_data['email']
             request.user.save()
             profile.phone = form.cleaned_data['phone']
+            profile.location = form.cleaned_data['location']
             profile.bio = form.cleaned_data['bio']
             profile.skills = form.cleaned_data['skills']
+            profile.interests = form.cleaned_data['interests']
             profile.save()
             return redirect('volunteer_profile')
     else:
         form = VolunteerProfileForm(initial={
             'first_name': request.user.first_name, 'last_name': request.user.last_name,
-            'email': request.user.email, 'phone': profile.phone, 'bio': profile.bio, 'skills': profile.skills,
+            'email': request.user.email, 'phone': profile.phone, 'location': profile.location,
+            'bio': profile.bio, 'skills': profile.skills, 'interests': profile.interests,
         })
     experiences = VolunteerExperience.objects.filter(volunteer=request.user)
     return render(request, 'pages/volunteer_profile_edit.html', {'form': form, 'experiences': experiences})

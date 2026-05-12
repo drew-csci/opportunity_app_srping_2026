@@ -131,7 +131,7 @@ fieldset.form-field { border:1px solid #e5e7eb; border-radius:.6rem; padding:.75
 .profile-info-item { display:flex; flex-direction:column; gap:.2rem; }
 .profile-info-label { font-size:.8rem; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:#64748b; }
 .skill-tags { display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.4rem; }
-.skill-tag { background:#eff6ff; color:#2f36ff; border:1px solid #bfdbfe; border-radius:99px; padding:.2rem .75rem; font-size:.85rem; }
+.skill-tag { background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe; border-radius:99px; padding:.35rem .9rem; font-size:1rem; font-weight:500; }
 
 /* Profile Summary – Hero Redesign */
 .profile-hero { background: linear-gradient(135deg, #0f172a 0%, #2023d0 60%, #484eff 100%); border-radius:.8rem; padding:2.5rem 2rem; margin-top:1.5rem; display:flex; align-items:center; gap:1.75rem; flex-wrap:wrap; }
