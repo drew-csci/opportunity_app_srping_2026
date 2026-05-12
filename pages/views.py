@@ -396,18 +396,15 @@ def organization_profile(request, org_id):
     elif request.user.user_type == 'organization' and request.user.id == org_id:
         unread_message_count = Message.objects.filter(recipient=request.user, is_read=False).count()
 
-    # Get current/open opportunities
     current_opportunities = Opportunity.objects.filter(
         organization=organization,
-        status='open'
-    ).order_by('-date_posted')
-    
-    # Get past/closed opportunities
+        is_active=True
+    ).order_by('-posted_date')
+
     past_opportunities = Opportunity.objects.filter(
         organization=organization,
-        status='closed'
-    ).order_by('-date_posted')
-    opportunities = Opportunity.objects.filter(organization=organization, is_active=True).order_by('-created_at')
+        is_active=False
+    ).order_by('-posted_date')
 
     return render(request, 'pages/organization_profile.html', {
         'organization': organization,
@@ -415,7 +412,6 @@ def organization_profile(request, org_id):
         'is_following': is_following,
         'current_opportunities': current_opportunities,
         'past_opportunities': past_opportunities,
-        'opportunities': opportunities,
         'impact_metrics': profile.impact_metrics.all(),
         'unread_message_count': unread_message_count,
     })
@@ -528,14 +524,17 @@ def volunteer_profile_edit(request):
             request.user.email = form.cleaned_data['email']
             request.user.save()
             profile.phone = form.cleaned_data['phone']
+            profile.location = form.cleaned_data['location']
             profile.bio = form.cleaned_data['bio']
             profile.skills = form.cleaned_data['skills']
+            profile.interests = form.cleaned_data['interests']
             profile.save()
             return redirect('volunteer_profile')
     else:
         form = VolunteerProfileForm(initial={
             'first_name': request.user.first_name, 'last_name': request.user.last_name,
-            'email': request.user.email, 'phone': profile.phone, 'bio': profile.bio, 'skills': profile.skills,
+            'email': request.user.email, 'phone': profile.phone, 'location': profile.location,
+            'bio': profile.bio, 'skills': profile.skills, 'interests': profile.interests,
         })
     experiences = VolunteerExperience.objects.filter(volunteer=request.user)
     return render(request, 'pages/volunteer_profile_edit.html', {'form': form, 'experiences': experiences})

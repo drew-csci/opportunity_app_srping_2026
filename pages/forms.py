@@ -87,10 +87,21 @@ class OpportunityForm(forms.ModelForm):
 
 
 class VolunteerProfileForm(forms.Form):
-    first_name = forms.CharField(max_length=150, label="First name")
-    last_name = forms.CharField(max_length=150, label="Last name")
+    first_name = forms.CharField(max_length=150, label="First name", required=False)
+    last_name = forms.CharField(max_length=150, label="Last name", required=False)
     email = forms.EmailField(label="Email")
     phone = forms.CharField(max_length=20, required=False, label="Phone number")
+    location = forms.CharField(
+        max_length=100,
+        required=False,
+        label="Location",
+        widget=forms.TextInput(attrs={
+            'placeholder': 'E.g., Newark, NJ',
+            'autocomplete': 'off',
+            'id': 'id_location',
+        }),
+        help_text="City and state — helps match you with nearby opportunities.",
+    )
     bio = forms.CharField(
         widget=forms.Textarea(attrs={'rows': 3}),
         required=False,
@@ -100,6 +111,12 @@ class VolunteerProfileForm(forms.Form):
         required=False,
         label="Skills",
         help_text="Comma-separated, e.g. Tutoring, Communicative, Fundraising",
+    )
+    interests = forms.CharField(
+        required=False,
+        label="Interests",
+        widget=forms.TextInput(attrs={'placeholder': 'Search interests...'}),
+        help_text="Areas you are passionate about — helps surface relevant opportunities for you.",
     )
 
 
@@ -139,6 +156,8 @@ class OrganizationImpactMetricForm(forms.ModelForm):
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
         }
+
+
 class ApplicationForm(forms.ModelForm):
     class Meta:
         model = Application
@@ -153,9 +172,9 @@ class ApplicationForm(forms.ModelForm):
 
 class MessageReplyForm(forms.Form):
     """Form for replying to messages with character limit validation."""
-    
+
     CHAR_LIMIT = 1000
-    
+
     reply_content = forms.CharField(
         max_length=CHAR_LIMIT,
         widget=forms.Textarea(attrs={
@@ -167,45 +186,37 @@ class MessageReplyForm(forms.Form):
         help_text=f'Maximum {CHAR_LIMIT} characters',
         strip=True,
     )
-    
+
     def clean_reply_content(self):
-        """Validate the reply content."""
         content = self.cleaned_data.get('reply_content', '').strip()
-        
         if not content:
-            raise forms.ValidationError(
-                'Please enter a message. Your reply cannot be blank.'
-            )
-        
+            raise forms.ValidationError('Please enter a message. Your reply cannot be blank.')
         if len(content) > self.CHAR_LIMIT:
             raise forms.ValidationError(
                 f'Your reply exceeds the {self.CHAR_LIMIT} character limit. '
                 f'Current length: {len(content)} characters. '
                 f'Please remove {len(content) - self.CHAR_LIMIT} characters.'
             )
-        
         return content
 
 
 class ReportForm(forms.Form):
     """Form for users to report inappropriate content."""
-    
+
     REASON_CHOICES = [
         ('spam', 'Spam'),
         ('harassment', 'Harassment or Bullying'),
         ('misinformation', 'Misleading or False Information'),
         ('other', 'Other'),
     ]
-    
+
     reason = forms.ChoiceField(
         choices=REASON_CHOICES,
-        widget=forms.Select(attrs={
-            'class': 'form-select',
-        }),
+        widget=forms.Select(attrs={'class': 'form-select'}),
         label='Reason for Report',
-        help_text='Please select the reason you are reporting this content'
+        help_text='Please select the reason you are reporting this content',
     )
-    
+
     notes = forms.CharField(
         max_length=1000,
         required=False,
@@ -215,11 +226,10 @@ class ReportForm(forms.Form):
             'class': 'form-control',
         }),
         label='Additional Details',
-        help_text='Optional: Provide any additional context or details about your report'
+        help_text='Optional: Provide any additional context or details about your report',
     )
-    
+
     def clean_reason(self):
-        """Ensure reason is a valid choice."""
         reason = self.cleaned_data.get('reason')
         valid_reasons = [choice[0] for choice in self.REASON_CHOICES]
         if reason not in valid_reasons:
