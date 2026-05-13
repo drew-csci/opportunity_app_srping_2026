@@ -1,6 +1,6 @@
 # Opportunity App
 
-**A centralized hub connecting New Jersey students with volunteer and internship opportunities.**
+**A centralized platform that connects New Jersey students with volunteer opportunities.**
 
 ---
 
@@ -12,8 +12,6 @@ Students can browse and filter opportunities by type, location, skills required,
 
 The platform supports three user roles — student, organization, and administrator — each with a tailored dashboard and permissions. Administrators can review reported content and manage the opportunity approval queue. All three roles authenticate via email/password or Google Sign-In through the OAuth 2.0 flow.
 
-The project was developed over a full semester as the CSCI 340 capstone at Drew University, built iteratively using Scrum with biweekly sprints, a GitHub Project board, and a pull-request-based review process.
-
 ---
 
 ## Team Members
@@ -22,13 +20,13 @@ All team members contributed as full-stack developers, taking on backend, fronte
 
 | Name | GitHub | Primary Role |
 |---|---|---|
-| Ryan DeVita | [@modestmag-dev](https://github.com/modestmag-dev) | Full-stack (Frontend focus) — Primarily responsible for UI design across the login workflow and the role-based dashboard. |
-| Nguyen Tin Tin Do | [@ndo1](https://github.com/ndo1) | Full-stack (Backend focus) — Primarily responsible for the AI-assisted messaging system and FAQ features. |
-| Dev Nitinkumar Hirpara | [@devhirpara29](https://github.com/devhirpara29) | Full-stack — Primarily responsible for the student and organization home dashboards and the follow organizations feature. |
-| Brandon Jachera | [@bjach04](https://github.com/bjach04) | Full-stack — Primarily responsible for opportunity search and filtering, home page UI redesign, and Google OAuth integration. |
-| Maximillian Juliano | [@mjuliano328](https://github.com/mjuliano328) | Full-stack (Backend focus) — Primarily responsible for volunteer messaging, opportunity management, and report content features. |
-| Nakiwe McDonald | [@nakiwem](https://github.com/nakiwem) | Full-stack — Primarily responsible for user profiles, application tracking, and the Contact Us feature. |
-| Puzi Wei | [@pwei454](https://github.com/pwei454) | Full-stack (Backend focus) — Primarily responsible for the organization dashboard, application notifications, and remind organization feature. |
+| Ryan DeVita | @modestmag-dev | Full-stack (Frontend focus) — Responsible for UI design across the login workflow and the role-based dashboard. |
+| Nguyen Tin Tin Do | @ndo1 | Full-stack (Backend focus) — Responsible for the AI-assisted messaging system and FAQ features. |
+| Dev Nitinkumar Hirpara | @devhirpara29 | Full-stack — Responsible for the student and organization home dashboards and the follow organizations feature. |
+| Brandon Jachera | @bjach04 | Full-stack — Responsible for opportunity search and filtering, home page UI redesign, and Google OAuth integration. |
+| Maximillian Juliano | @mjuliano328 | Full-stack (Backend focus) — Responsible for volunteer messaging, opportunity management, and report content features. |
+| Nakiwe McDonald | @nakiwem | Full-stack — Responsible for user profiles, application tracking, and the Contact Us feature. |
+| Puzi Wei | @pwei454 | Full-stack (Backend focus) — Responsible for the organization dashboard, application notifications, and remind organization feature. |
 
 ---
 
@@ -52,15 +50,15 @@ All team members contributed as full-stack developers, taking on backend, fronte
 
 ## Architecture Overview
 
-The app uses Django's MVT architecture on the backend with a React + Vite frontend. The `accounts` app handles authentication, registration, and password reset. The `pages` app holds all core business logic — models, views, forms, and templates, including role-specific dashboards for students and organizations, and a Contact Us page for user support.
+The app follows Django's MVT (Model-View-Template) architecture. The `accounts` app handles authentication, registration, and password reset. The `pages` app holds all core business logic — models, views, forms, and templates, including role-specific dashboards for students and organizations, and a Contact Us page for user support.
 
 ```
 +--------------------------------------------------+
-|          React 18 + Vite (Browser)               |
+|        Browser (HTML/CSS/Bootstrap + JS)         |
 +---------------------+----------------------------+
-                      | HTTP / REST API
+                      | HTTP
 +---------------------v----------------------------+
-|       Django 5 + Django REST Framework           |
+|                  Django 5                        |
 |                                                  |
 |  +--------------+   +-------------------------+  |
 |  |  accounts/   |   |        pages/           |  |
@@ -84,13 +82,6 @@ The app uses Django's MVT architecture on the backend with a React + Vite fronte
 +--------------------------------------------------+
 ```
 
-**Request flow:** Browser → Django URL router → view function → ORM query → HTML template or JSON response.
-
-**Three user roles:**
-- **Student** — browse, apply, message organizations, track applications, send reminders, log achievements
-- **Organization** — post opportunities, manage applicants, message students, view impact metrics
-- **Administrator** — approve opportunities, manage reported content
-
 ---
 
 ## Getting Started
@@ -99,7 +90,6 @@ The app uses Django's MVT architecture on the backend with a React + Vite fronte
 
 - Python 3.12+
 - pip
-- Node.js 18+ and npm (for the React frontend)
 - Access to the shared PostgreSQL instance (via `.env`) — contact a team member for credentials
 
 ### Installation
@@ -114,11 +104,8 @@ python3 -m venv venv
 source venv/bin/activate        # macOS / Linux
 # venv\Scripts\activate         # Windows
 
-# 3. Install backend dependencies
+# 3. Install dependencies
 pip install -r requirements.txt
-
-# 4. Install frontend dependencies
-cd frontend && npm install && cd ..
 ```
 
 ### Configuration
@@ -143,39 +130,42 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 ### Run the App
 
 ```bash
-# Backend
 python manage.py migrate
 python manage.py runserver
-
-# Frontend (in a separate terminal)
-cd frontend && npm run dev
 ```
 
-Visit [http://127.0.0.1:8000](http://127.0.0.1:8000)
-
-### Test Accounts
-
-| Role | Email | Password |
-|---|---|---|
-| Student | student_oppo@drew.edu | 1Opportunity! |
-| Organization | org_oppo@drew.edu | 1Opportunity! |
-| Administrator | admin_oppo@drew.edu | 1Opportunity! |
-| Superuser | super_oppo@drew.edu | 1OpportunityApp! |
-
-Admin panel: [http://127.0.0.1:8000/admin](http://127.0.0.1:8000/admin)
+Visit http://127.0.0.1:8000
 
 ---
 
 ## Usage
 
-Start the app locally and navigate to the opportunity board as a student:
+**1. Browse and apply to opportunities (Student)**
 
 ```bash
 python manage.py runserver
-# Visit http://127.0.0.1:8000/screen1/ to browse opportunities
+# Visit http://127.0.0.1:8000/screen1/
 ```
 
-Log in with the student test account (`student_oppo@drew.edu` / `1Opportunity!`), browse and filter opportunities by keyword, location, or type, apply to a listing, and track your submission at `/my-applications/`. Organizations log in separately and manage their applicant pipeline from the dashboard at `/org/dashboard/`.
+Log in as a student, use the search bar and filters to find opportunities by keyword, location, or type, click a listing to view details, and submit an application with a cover message. Track all submissions at `/my-applications/`.
+
+**2. Post and manage opportunities (Organization)**
+
+```bash
+python manage.py runserver
+# Visit http://127.0.0.1:8000/org/dashboard/
+```
+
+Log in as an organization, click **Post Opportunity** to fill in the title, description, required skills, location, and deadline. Review incoming applications, accept or decline applicants, and mark volunteers as complete from the dashboard.
+
+**3. Send a message with AI-assisted suggestions (Student)**
+
+```bash
+python manage.py runserver
+# Visit http://127.0.0.1:8000/organization/<id>/
+```
+
+Navigate to an organization's profile page and click **Send Message**. The app generates FAQ suggestions relevant to the opportunity — select one to auto-fill your message or write your own, then submit.
 
 ---
 
@@ -221,17 +211,11 @@ npx vitest
 
 **GitHub Project Board:** [Opportunity App Spring 2026 Project](https://github.com/orgs/drew-csci/projects)
 
-### Branching Strategy
+All feature work was done on dedicated branches and merged into `main` through pull requests. Each PR required at least one reviewer approval before merging.
 
-- `main` is the stable branch; all feature work happens on dedicated branches
-- Naming: `feature/issue-<number>-short-description` or `<author>_<feature>`
-- Direct pushes to `main` are not permitted — all changes go through pull requests
-
-### PR Review Process
-
-- Each PR requires at least one reviewer approval before merging
-- PRs are linked to GitHub Issues and user stories on the project board
-- Merge conflicts are resolved on the feature branch before requesting review
+- Branch naming: `feature/issue-<number>-short-description` or `<author>_<feature>`
+- Most PRs were linked to GitHub Issues and user stories on the project board
+- Merge conflicts were resolved on the feature branch before requesting review
 
 ---
 
@@ -253,16 +237,16 @@ npx vitest
 
 ### Third-Party Libraries and Tools
 
-- [Django](https://www.djangoproject.com/) — web framework
-- [Django REST Framework](https://www.django-rest-framework.org/) — REST API layer
-- [React](https://react.dev/) — frontend UI library
-- [Vite](https://vitejs.dev/) — frontend build tool
-- [django-allauth](https://django-allauth.readthedocs.io/) — authentication including Google OAuth 2.0
-- [psycopg2](https://www.psycopg.org/) — PostgreSQL adapter for Python
-- [python-dotenv](https://github.com/theskumar/python-dotenv) — environment variable management
-- [Google Cloud SQL](https://cloud.google.com/sql) — hosted PostgreSQL database
-- [Vitest](https://vitest.dev/) — frontend unit testing framework
-- [coverage.py](https://coverage.readthedocs.io/) — backend test coverage reporting
+- Django — web framework
+- Django REST Framework — REST API layer
+- React — frontend UI library
+- Vite — frontend build tool
+- django-allauth — authentication including Google OAuth 2.0
+- psycopg2 — PostgreSQL adapter for Python
+- python-dotenv — environment variable management
+- Google Cloud SQL — hosted PostgreSQL database
+- Vitest — frontend unit testing framework
+- coverage.py — backend test coverage reporting
 
 ### AI Tools
 
