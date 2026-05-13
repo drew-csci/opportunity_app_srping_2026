@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
 from django.db.models import Q
 from django.http import JsonResponse, HttpResponseForbidden
 from django.utils import timezone
@@ -186,8 +187,14 @@ def remind_organization(request, application_id):
         return redirect('my_applications')
 
     organization = application.opportunity.organization
+
+    
+
     messages.success(request, f'Reminder sent to {organization.display_name}.')
     return redirect('my_applications')
+
+
+@login_required
 def student_achievements(request):
     if not hasattr(request.user, 'user_type') or request.user.user_type != 'student':
         return redirect('screen1')
@@ -239,12 +246,12 @@ def review_application(request, application_id):
             if application.responded_date is None:
                 application.responded_date = timezone.now()
             application.save()
-            from django.db import connection as db_conn
-            with db_conn.cursor() as cur:
-                cur.execute(
-                    "INSERT INTO pages_notification (recipient_id, message, is_read, created_at, notification_type) VALUES (%s, %s, %s, NOW(), %s)",
-                    [application.student.id, f"Your application to '{application.opportunity.title}' has been {decision}.", False, decision]
-                )
+            from pages.models import Notification
+            Notification.objects.create(
+                recipient=application.student,
+                message=f"Your application to '{application.opportunity.title}' has been {decision}.",
+                is_read=False,
+            )
             messages.success(request, f'Application status updated.')
             return redirect('organization_applications')
         messages.error(request, 'Please choose a valid decision.')
