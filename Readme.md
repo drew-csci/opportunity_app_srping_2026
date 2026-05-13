@@ -35,14 +35,13 @@ All team members contributed as full-stack developers, taking on backend, fronte
 | Layer | Technology |
 |---|---|
 | Backend Language | Python 3.12 |
-| Backend Framework | Django 5.2.12 + Django REST Framework |
-| Frontend | React 18.3.1 + Vite 5.4.10 + Plain CSS |
+| Backend Framework | Django 5.2.12 |
+| Frontend | HTML + Bootstrap + plain CSS (Django templates) |
 | Database | PostgreSQL (Google Cloud SQL) |
 | Auth | django-allauth 65.7.0 (email + Google OAuth 2.0) |
 | DB Driver | psycopg2-binary 2.9.11 |
 | Config | python-dotenv 1.2.2 |
-| Frontend Testing | Vitest 3.2.4 + React Testing Library |
-| Backend Testing | Django TestCase + coverage.py |
+| Testing | Django TestCase + coverage.py |
 | Test DB | SQLite (auto-selected during `manage.py test`) |
 | Deployment | Google Cloud (Cloud SQL) |
 
@@ -199,12 +198,6 @@ The suite in `pages/tests.py` covers:
 
 Test framework: Django's `unittest`-based `TestCase` and `Client`, with coverage.py for coverage reporting.
 
-### Frontend Tests
-
-```bash
-npx vitest
-```
-
 ---
 
 ## Project Management
@@ -238,14 +231,10 @@ All feature work was done on dedicated branches and merged into `main` through p
 ### Third-Party Libraries and Tools
 
 - Django — web framework
-- Django REST Framework — REST API layer
-- React — frontend UI library
-- Vite — frontend build tool
 - django-allauth — authentication including Google OAuth 2.0
 - psycopg2 — PostgreSQL adapter for Python
 - python-dotenv — environment variable management
 - Google Cloud SQL — hosted PostgreSQL database
-- Vitest — frontend unit testing framework
 - coverage.py — backend test coverage reporting
 
 ### AI Tools
